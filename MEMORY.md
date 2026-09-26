@@ -6,7 +6,7 @@ Equity Benefit Wallet is a hackathon MVP for helping employers issue and manage 
 
 ## Core concept
 
-The intended product will represent a contractor benefit grant, with an employer-side issuance path and a contractor-side benefit wallet. This repository currently contains only the project foundation; no grant or escrow behavior exists.
+The product represents a contractor benefit grant, with an employer-side issuance path and a contractor-side benefit wallet. The MVP contract now implements the escrow lifecycle `CREATED -> FUNDED -> RELEASED`; there is no cancellation state.
 
 ## Target network
 
@@ -27,6 +27,15 @@ The intended product will represent a contractor benefit grant, with an employer
 - Contract security review and comprehensive tests must precede any real deployment.
 - Do not expose or imply that a placeholder frontend is a usable wallet or custody solution.
 
+## Implemented contract architecture and invariants
+
+- `GrantEscrow` accepts constructor-supplied USDG, trusted swap-adapter, AAPL, TSLA, and NVDA addresses. This is temporary testnet wiring; these values must be verified and replaced only from official deployment inputs.
+- `createGrant` records the caller as employer. Only that employer can fund or release; only the stored contractor can claim at/after the deadline.
+- Funding accepts USDG, permits only the three constructor-supplied stock tokens, calls the explicit `ISwapAdapter`, clears the adapter allowance afterward, and records the received raw stock-token balance delta.
+- The selected token and deadline are fixed once funding succeeds because no mutation functions exist and grants can only be funded from `CREATED`.
+- A stock token's `uiMultiplier()` is read exactly once at funding and retained for display/audit context only. Release and timeout claim transfer the stored `rawEscrowAmount` exactly and never recalculate a payout from a multiplier.
+- Both payout paths are non-reentrant, transition to `RELEASED` before the token transfer, and always pay the stored contractor.
+
 ## UI/design constraints
 
 - Future UI should clearly distinguish employer and contractor experiences.
@@ -35,7 +44,6 @@ The intended product will represent a contractor benefit grant, with an employer
 
 ## Explicitly out of scope for this scaffold
 
-- `GrantEscrow` logic and grant state transitions
 - USDG-to-stock-token swapping and 0x integration
 - Wallet connection, signing, or transaction flows
 - Real contract deployment
