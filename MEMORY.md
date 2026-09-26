@@ -38,16 +38,17 @@ The product represents a contractor benefit grant, with an employer-side issuanc
 
 ## UI/design constraints
 
-- Future UI should clearly distinguish employer and contractor experiences.
-- Future benefit state, balances, eligibility, and any transaction status must be explicit and understandable.
-- No employer/contractor pages, wallet flow, or certificate UI are included in this scaffold.
+- The frontend has four Vite routes: landing, employer funding, employer grants, and contractor grant.
+- The visual system uses Fraunces and Inter with paper, ink, and brass colors; square bordered surfaces; 3px button corners; no gradients, shadows, or generic SaaS-card treatment.
+- The certificate component must retain the `cert → cert-inner → cert-core` composition, a wax-seal state badge, left-aligned landing hero copy, a centered certificate, visible focus states, and reduced-motion support.
+- Certificate states are `LOCKED`, `UNLOCKED`, and `CLAIMED`; green is reserved for the unlocked badge.
+- Current screens use realistic local demo data and explicitly say that they are testnet demonstrations. Wallet connection, transaction execution, and live chain reads remain out of scope behind a small adapter interface.
 
 ## Explicitly out of scope for this scaffold
 
 - USDG-to-stock-token swapping and 0x integration
 - Wallet connection, signing, or transaction flows
 - Real contract deployment
-- Employer/contractor product pages and certificate UI
 - AI/LLM features and paid services
 
 ## Current toolchain

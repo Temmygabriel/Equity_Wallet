@@ -2,13 +2,14 @@
 
 ## Current state
 
-The repository contains the project scaffold plus the MVP `GrantEscrow` core contract and its Hardhat test suite. Production deployment and product UI remain unimplemented.
+The repository contains the project scaffold, MVP `GrantEscrow` core contract/test suite, and a local-data React/Vite frontend demo. Production deployment and live wallet integration remain unimplemented.
 
 ## Completed steps
 
 1. Reconnaissance: confirmed the initial repository contained only `.gitkeep`.
 2. Step 2 foundation: created workspace configuration, Hardhat contract structure, React/Vite frontend structure, environment template, documentation, and ignore rules.
 3. Step 3 contract core: implemented the `CREATED -> FUNDED -> RELEASED` grant lifecycle, explicit swap adapter boundary, mock contracts, and Hardhat tests for access control, deadlines, raw payouts, multiplier invariance, immutability, and payout reentrancy.
+4. Step 4 frontend MVP: built landing, employer funding/grants, and contractor grant views using a certificate-led visual system and an isolated local demo adapter.
 
 ## Git baseline
 
@@ -24,15 +25,16 @@ The repository contains the project scaffold plus the MVP `GrantEscrow` core con
 - Uses constructor-supplied temporary addresses for USDG, swap adapter, AAPL, TSLA, and NVDA; no real network values are included.
 - Limits funding/release to the employer and timeout claim to the stored contractor, with `releaseGrant` requiring a pre-deadline timestamp and `claimAfterTimeout` allowing the exact deadline.
 - Stores the stock-token balance delta and transfers that same stored raw amount on either payout path, independent of future multiplier changes.
+- Provides `/`, `/employer/fund`, `/employer/grants`, and `/contractor/grant` with explicit demo/testnet messaging; no wallet or blockchain connection is implemented.
 
 ## Remaining work
 
 - Confirm and incorporate the design/build specifications once available in the project context.
 - Review the contract and mock adapter design against the final Design and Build Specs, then perform a security-focused audit before a live deployment.
 - Add deployment scripts only after official network, token, and adapter values are available.
-- Build employer and contractor frontend experiences, wallet flows, and any certificate experience.
+- Connect the existing frontend adapter to reviewed viem/wagmi contract reads and writes only after official addresses and wallet UX are approved.
 - Add any approved USDG/stock-token swap integration only after its requirements and addresses are confirmed.
 
 ## Next recommended implementation step
 
-Review the implemented `GrantEscrow` interface and test suite against the approved Design and Build Specs, then write a deployment runbook that consumes verified official testnet values. Do not deploy or select token/router addresses until those values are supplied.
+Validate the frontend against the approved Design Spec once the full source is available, then replace only the adapter implementation with reviewed viem/wagmi integration after official addresses and wallet UX are approved. Do not deploy or connect a wallet until those values are supplied.

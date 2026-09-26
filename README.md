@@ -32,8 +32,18 @@ PROGRESS.md      Project handoff and implementation status
    npm run build
    ```
 
+## Run the frontend demo
+
+After installing dependencies, start the Vite application from the repository root:
+
+```bash
+npm run dev --workspace frontend
+```
+
+Open the local URL reported by Vite. The demo includes `/`, `/employer/fund`, `/employer/grants`, and `/contractor/grant`. All information and actions are local demo/testnet UI states: it does not connect a wallet, read live chain data, or submit transactions.
+
 The Robinhood testnet network is added to Hardhat only when `ROBINHOOD_TESTNET_RPC_URL` is set. No RPC endpoint, token, router, or contract address is assumed by this repository.
 
 ## Scope of this scaffold
 
-This commit establishes structure and configuration only. It intentionally includes no escrow/grant logic, swap integration, deployment to a live network, wallet connection flow, or product pages.
+The frontend is a visual MVP built with local fixture data. It intentionally includes no wallet connection, contract read/write integration, production swap integration, deployment to a live network, backend, or authentication.
