@@ -1,0 +1,20 @@
+# Dependencies and build output
+node_modules/
+**/node_modules/
+cache/
+artifacts/
+coverage/
+dist/
+**/dist/
+
+# Environment and secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Logs and editor files
+*.log
+.DS_Store
+.vscode/
+.idea/
