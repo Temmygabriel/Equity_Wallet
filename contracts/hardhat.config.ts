@@ -4,7 +4,7 @@ import type { HardhatUserConfig } from "hardhat/config";
 
 dotenv.config({ path: "../.env" });
 
-const rpcUrl = process.env.ROBINHOOD_TESTNET_RPC_URL;
+const robinhoodTestnetRpcUrl = process.env.RH_RPC_URL ?? "https://rpc.testnet.chain.robinhood.com";
 const deployerPrivateKey = process.env.DEPLOYER_PRIVATE_KEY;
 
 const config: HardhatUserConfig = {
@@ -14,15 +14,13 @@ const config: HardhatUserConfig = {
       optimizer: { enabled: true, runs: 200 }
     }
   },
-  networks: rpcUrl
-    ? {
-        robinhoodTestnet: {
-          chainId: 46630,
-          url: rpcUrl,
-          accounts: deployerPrivateKey ? [deployerPrivateKey] : []
-        }
-      }
-    : {}
+  networks: {
+    robinhoodTestnet: {
+      chainId: 46630,
+      url: robinhoodTestnetRpcUrl,
+      accounts: deployerPrivateKey ? [deployerPrivateKey] : []
+    }
+  }
 };
 
 export default config;

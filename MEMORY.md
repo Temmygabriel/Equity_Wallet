@@ -12,7 +12,8 @@ The product represents a contractor benefit grant, with an employer-side issuanc
 
 - Robinhood Chain testnet
 - Chain ID: `46630`
-- RPC endpoint: intentionally not stored in source control; supply it through `ROBINHOOD_TESTNET_RPC_URL` when it is officially available.
+- Public RPC: `https://rpc.testnet.chain.robinhood.com` (override with `RH_RPC_URL` only when necessary).
+- Explorer: `https://explorer.testnet.chain.robinhood.com`.
 
 ## Architectural constraints
 
@@ -20,6 +21,7 @@ The product represents a contractor benefit grant, with an employer-side issuanc
 - Use Solidity/Hardhat for contracts and React/TypeScript/Vite for the frontend.
 - Keep contracts, tests, deployment scripts, frontend, and shared documentation in separate top-level areas.
 - Do not hard-code unknown RPC URLs, addresses, token metadata, router addresses, or deployment values.
+- Deployment requires environment-supplied `USDG`, `SWAP_ADAPTER`, `AAPL`, `TSLA`, and `NVDA` addresses; current values remain placeholders until official testnet addresses are verified.
 
 ## Security constraints
 
@@ -35,6 +37,8 @@ The product represents a contractor benefit grant, with an employer-side issuanc
 - The selected token and deadline are fixed once funding succeeds because no mutation functions exist and grants can only be funded from `CREATED`.
 - A stock token's `uiMultiplier()` is read exactly once at funding and retained for display/audit context only. Release and timeout claim transfer the stored `rawEscrowAmount` exactly and never recalculate a payout from a multiplier.
 - Both payout paths are non-reentrant, transition to `RELEASED` before the token transfer, and always pay the stored contractor.
+- Focused static review in Step 5 found no objective issue requiring a contract change: state transitions, access checks, exact raw payout, allowance reset, and payout reentrancy protection match the current MVP requirements.
+- The trusted swap adapter remains the only swap boundary. 0x supports Robinhood Chain mainnet (`4663`) but not testnet (`46630`), so no 0x testnet route is configured.
 
 ## UI/design constraints
 
