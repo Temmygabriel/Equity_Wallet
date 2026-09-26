@@ -46,15 +46,21 @@ The product represents a contractor benefit grant, with an employer-side issuanc
 - The visual system uses Fraunces and Inter with paper, ink, and brass colors; square bordered surfaces; 3px button corners; no gradients, shadows, or generic SaaS-card treatment.
 - The certificate component must retain the `cert → cert-inner → cert-core` composition, a wax-seal state badge, left-aligned landing hero copy, a centered certificate, visible focus states, and reduced-motion support.
 - Certificate states are `LOCKED`, `UNLOCKED`, and `CLAIMED`; green is reserved for the unlocked badge.
-- Current screens use realistic local demo data and explicitly say that they are testnet demonstrations. Wallet connection, transaction execution, and live chain reads remain out of scope behind a small adapter interface.
+- The frontend uses viem through `chainAdapter.ts` for EIP-1193 wallet connection and real testnet reads/writes. It is configured only from deployment-produced `VITE_*` addresses and must display that mock assets are not real securities.
 
 ## Explicitly out of scope for this scaffold
 
 - USDG-to-stock-token swapping and 0x integration
 - Wallet connection, signing, or transaction flows
-- Real contract deployment
+- Mainnet deployment or use of real securities/token addresses
 - AI/LLM features and paid services
 
 ## Current toolchain
 
 npm workspaces; Hardhat, Solidity `0.8.24`, and TypeScript for contracts; React, TypeScript, and Vite for the frontend.
+
+## Testnet mock demo
+
+- `deploy:demo:testnet` checks chain ID `46630`, deploys MockUSDG, mock AAPL/TSLA/NVDA, MockSwapAdapter, and GrantEscrow, and mints initial mock USDG to the deployer.
+- The mock adapter is deterministic: its default rate is 1:1 at 18 decimals and it enforces `minStockOut`. The existing fixed-output mode is retained solely for unit tests.
+- The demo contract addresses are never committed; copy the script output into `frontend/.env.local` after deployment.

@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "compile": "hardhat compile",
+    "deploy:demo:testnet": "hardhat run scripts/deploy-testnet-demo.ts --network robinhoodTestnet",
     "deploy:testnet": "hardhat run scripts/deploy-grant-escrow.ts --network robinhoodTestnet",
     "test": "hardhat test",
     "typecheck": "tsc --noEmit"

@@ -98,6 +98,16 @@ describe("GrantEscrow", function () {
       .to.be.revertedWith("MockSwapAdapter: insufficient output");
   });
 
+  it("uses the mock adapter's deterministic configured rate", async function () {
+    const fixture = await deployFixture();
+    await createGrant(fixture);
+    await fixture.adapter.setRate(ethers.parseUnits("1", 18));
+
+    await fixture.escrow.connect(fixture.employer).fundGrant(0, USDG_AMOUNT, await fixture.aapl.getAddress(), USDG_AMOUNT);
+
+    expect((await fixture.escrow.grants(0)).rawEscrowAmount).to.equal(USDG_AMOUNT);
+  });
+
   it("lets the employer release before the deadline and pays the stored raw amount", async function () {
     const fixture = await deployFixture();
     const { grantId } = await fundAapl(fixture);

@@ -54,6 +54,19 @@ Robinhood Chain testnet uses chain ID `46630`, public RPC `https://rpc.testnet.c
 
 The swap adapter remains an explicit contract boundary. 0x Swap API support is currently available for Robinhood Chain mainnet (`4663`), **not** testnet (`46630`); this repository does not claim or attempt a testnet 0x route.
 
+## End-to-end mock demo
+
+This is the supported Robinhood Chain **testnet** demonstration. It deploys mock USDG and mock AAPL/TSLA/NVDA contracts; these assets are not real securities.
+
+1. Set `DEPLOYER_PRIVATE_KEY` in root `.env` and fund that account with Robinhood Chain testnet ETH.
+2. Run `npm run deploy:demo:testnet --workspace contracts`. The script deploys MockUSDG, mock stock tokens, MockSwapAdapter, and GrantEscrow, then prints `VITE_*` values and chain ID `46630`.
+3. Copy the printed `VITE_*` values into `frontend/.env.local`; do not make up addresses.
+4. Run `npm run dev --workspace frontend`, connect an EIP-1193 wallet on Robinhood Chain Testnet (`46630`), and open `/employer/fund`.
+5. As the employer, enter a contractor address, future deadline, test stock, and USDG amount, then sign create/approve/fund transactions. The deployer receives initial mock USDG.
+6. Open `/contractor/grant`, load the returned Grant ID, then have the employer use **Release now** before the deadline or the stored contractor use **Claim it yourself** at/after the deadline.
+
+The mock adapter converts USDG to the selected mock stock deterministically at a 1:1 18-decimal rate unless changed for a test. It enforces `minStockOut`; no 0x route is involved.
+
 ## Scope of this scaffold
 
-The frontend is a visual MVP built with local fixture data. It intentionally includes no wallet connection, contract read/write integration, production swap integration, deployment to a live network, backend, or authentication.
+The frontend supports only the configured Robinhood Chain testnet mock contracts through an EIP-1193 wallet. It intentionally includes no production swap integration, mainnet deployment, real securities/token addresses, backend, or authentication.

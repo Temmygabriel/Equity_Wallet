@@ -10,13 +10,23 @@ contract MockSwapAdapter is ISwapAdapter {
     using SafeERC20 for IERC20;
 
     uint256 public outputAmount;
+    uint256 public rate = 1e18;
+    bool public useFixedOutput;
 
     function setOutputAmount(uint256 outputAmount_) external {
         outputAmount = outputAmount_;
+        useFixedOutput = true;
+    }
+
+    /// @notice Configures a deterministic 18-decimal output rate for demo deployments.
+    function setRate(uint256 rate_) external {
+        require(rate_ > 0, "MockSwapAdapter: zero rate");
+        rate = rate_;
+        useFixedOutput = false;
     }
 
     function swap(address tokenIn, address tokenOut, uint256 amountIn, uint256 minAmountOut) external returns (uint256 amountOut) {
-        amountOut = outputAmount;
+        amountOut = useFixedOutput ? outputAmount : (amountIn * rate) / 1e18;
         require(amountOut >= minAmountOut, "MockSwapAdapter: insufficient output");
         IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), amountIn);
         MockStockToken(tokenOut).mint(msg.sender, amountOut);
