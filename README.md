@@ -1,6 +1,6 @@
 # Equity Benefit Wallet
 
-A hackathon MVP foundation for a benefit wallet that will help employers issue and manage equity-related benefits for contractors. The product implementation has not started in this scaffold.
+A hackathon MVP for a benefit wallet that helps employers issue and manage equity-related benefits for contractors. It includes the GrantEscrow contract, a viem-connected Robinhood Chain Testnet mock demo, deployment scripts, and CI validation.
 
 ## Toolchain
 
@@ -40,7 +40,19 @@ After installing dependencies, start the Vite application from the repository ro
 npm run dev --workspace frontend
 ```
 
-Open the local URL reported by Vite. The demo includes `/`, `/employer/fund`, `/employer/grants`, and `/contractor/grant`. All information and actions are local demo/testnet UI states: it does not connect a wallet, read live chain data, or submit transactions.
+Open the local URL reported by Vite. The demo includes `/`, `/employer/fund`, `/employer/grants`, and `/contractor/grant`. After deploying the supported mock contracts and configuring `frontend/.env.local`, it connects an EIP-1193 wallet, reads the configured testnet contracts, and submits testnet transactions. It does not support real securities, production custody, or mainnet use.
+
+## Deploy the frontend with Vercel
+
+The root [`vercel.json`](vercel.json) configures this npm-workspace Vite single-page app for Vercel, including direct-route fallback for the employer and contractor views.
+
+1. Import the GitHub repository in Vercel.
+2. Select the **Vite** framework preset (or **Other** if the preset is unavailable) and keep the repository root as the project root.
+3. Set the build command to `npm run build` and the output directory to `frontend/dist`.
+4. Add these Vercel project environment variables from a verified mock deployment: `VITE_RH_RPC_URL`, `VITE_GRANT_ESCROW_ADDRESS`, `VITE_USDG_ADDRESS`, `VITE_AAPL_ADDRESS`, `VITE_TSLA_ADDRESS`, and `VITE_NVDA_ADDRESS`.
+5. Deploy. The SPA fallback supports direct refreshes at `/employer/fund`, `/employer/grants`, and `/contractor/grant`.
+
+Vite variables are public client configuration. Do not place private keys, deployment credentials, or other secrets in `VITE_*` variables. This deployment remains a Robinhood Chain Testnet mock demo and does not use real securities.
 
 ## Testnet deployment
 
