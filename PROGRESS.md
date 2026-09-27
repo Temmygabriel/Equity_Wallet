@@ -12,6 +12,9 @@ The repository contains the project scaffold, MVP `GrantEscrow` core contract/te
 4. Step 4 frontend MVP: built landing, employer funding/grants, and contractor grant views using a certificate-led visual system and an isolated local demo adapter.
 5. Step 5 deployment/CI: configured the verified Robinhood Chain testnet RPC, added environment-validated deployment tooling, documented the explorer runbook, and added GitHub Actions validation.
 6. Step 6 end-to-end mock demo: added a chain-guarded mock deployment script, deterministic mock swap conversion, and viem wallet/contract actions for the testnet UI.
+7. Step 7 validation: attempted compilation, contract tests, workspace typechecking, and frontend build. The environment's npm registry returned `403 Forbidden` for `@nomicfoundation/hardhat-toolbox`, leaving dependencies unavailable. As a result, compile/test could not find `hardhat`, and typecheck/build reported missing installed dependencies. `git diff --check` passed and the working tree was clean before documentation updates.
+8. Step 8 dependency diagnosis: confirmed there is no usable `node_modules` installation (`.bin`, Hardhat, and Hardhat Toolbox are absent), no lockfile, and an empty npm cache. `npm install --offline` failed with `ENOTCACHED`; the configured registry is `https://registry.npmjs.org/` through the environment proxy. Replacing the Toolbox is technically possible only with its individual Hardhat plugins (ethers, Chai matchers, network helpers, Chai/types), but cannot unblock this environment because no dependencies are locally available and the registry access restriction remains. No dependency or application configuration was changed.
+8. Step 8 dependency diagnosis: confirmed there is no usable `node_modules` installation (`.bin`, Hardhat, and Hardhat Toolbox are absent), no lockfile, and an empty npm cache. `npm install --offline` failed with `ENOTCACHED`; the configured registry is `https://registry.npmjs.org/` through the environment proxy. Replacing the Toolbox is technically possible only with its individual Hardhat plugins (ethers, Chai matchers, network helpers, Chai/types), but cannot unblock this environment because no dependencies are locally available and the registry access restriction remains. No dependency or application configuration was changed.
 
 ## Git baseline
 
@@ -48,4 +51,4 @@ The repository contains the project scaffold, MVP `GrantEscrow` core contract/te
 
 ## Next recommended implementation step
 
-Run the mock deployment on Robinhood Chain Testnet, use the emitted `VITE_*` values in `frontend/.env.local`, and perform the employer create/fund plus contractor release/timeout-claim demo. Do not add a 0x testnet route or treat mock assets as real securities.
+Resolve the npm registry access restriction, install workspace dependencies, and rerun `npm run compile`, `npm test`, `npm run typecheck`, and `npm run build`. Only after those validations pass should the mock deployment and employer/contractor testnet flow be performed. Do not add a 0x testnet route or treat mock assets as real securities.

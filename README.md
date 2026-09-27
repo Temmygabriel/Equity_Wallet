@@ -1,6 +1,6 @@
 # Equity Benefit Wallet
 
-A hackathon MVP foundation for a benefit wallet that will help employers issue and manage equity-related benefits for contractors. The product implementation has not started in this scaffold.
+A hackathon MVP for a benefit wallet that helps employers issue and manage equity-related benefits for contractors. It includes the GrantEscrow contract, a viem-connected Robinhood Chain Testnet mock demo, deployment scripts, and CI validation.
 
 ## Toolchain
 
@@ -40,7 +40,7 @@ After installing dependencies, start the Vite application from the repository ro
 npm run dev --workspace frontend
 ```
 
-Open the local URL reported by Vite. The demo includes `/`, `/employer/fund`, `/employer/grants`, and `/contractor/grant`. All information and actions are local demo/testnet UI states: it does not connect a wallet, read live chain data, or submit transactions.
+Open the local URL reported by Vite. The demo includes `/`, `/employer/fund`, `/employer/grants`, and `/contractor/grant`. After deploying the supported mock contracts and configuring `frontend/.env.local`, it connects an EIP-1193 wallet, reads the configured testnet contracts, and submits testnet transactions. It does not support real securities, production custody, or mainnet use.
 
 ## Testnet deployment
 
