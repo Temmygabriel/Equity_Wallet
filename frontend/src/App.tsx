@@ -1,4 +1,4 @@
-import { type FormEvent, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { chainAdapter, type DemoGrant, type GrantState } from "./chainAdapter";
 
 const routes = ["/", "/employer/fund", "/employer/grants", "/contractor/grant"] as const;
@@ -150,9 +150,34 @@ function Seal({ state }: { state: GrantState }) {
   );
 }
 
-function Certificate({ grant, specimen = false }: { grant: DemoGrant; specimen?: boolean }) {
+/* A certificate is only ever one of three things: a funded grant read from the
+   contract, the employer's draft before funding, or nothing loaded yet. Keeping
+   them distinct stops the placeholder from reading as an issued instrument. */
+type CertMode = "issued" | "draft" | "unloaded";
+
+function Certificate({
+  grant,
+  specimen = false,
+  mode = "issued"
+}: {
+  grant: DemoGrant;
+  specimen?: boolean;
+  mode?: CertMode;
+}) {
   const held = grant.state === "LOCKED";
   const stateLabel = grant.state === "UNLOCKED" ? "Unlocked" : grant.state === "CLAIMED" ? "Claimed" : "Held by the contract";
+  const kind =
+    mode === "draft"
+      ? "Draft agreement — not yet funded"
+      : mode === "unloaded"
+        ? "No Grant loaded"
+        : `Contract-held benefit certificate${specimen ? " — specimen" : ""}`;
+  const quantity =
+    mode === "draft"
+      ? `${grant.usdgAmount || "—"} USDG, converted to stock when funded`
+      : mode === "unloaded"
+        ? "—"
+        : `${grant.stockAmount} test stock tokens`;
 
   return (
     <article className="cert" aria-label={`${grant.stock} equity benefit grant certificate`}>
@@ -163,15 +188,15 @@ function Certificate({ grant, specimen = false }: { grant: DemoGrant; specimen?:
           <header className="cert-head">
             <div>
               <p className="cert-issuer">Equity Benefit Wallet</p>
-              <p className="cert-kind">Contract-held benefit certificate{specimen ? " — specimen" : ""}</p>
+              <p className="cert-kind">{kind}</p>
             </div>
-            {held && <p className="cert-held">Held until {grant.deadline}</p>}
+            {held && mode === "issued" && <p className="cert-held">Held until {grant.deadline}</p>}
           </header>
 
           <div className="cert-amount">
             <p className="cert-amount-label">Grant of</p>
-            <p className="cert-symbol">{grant.stock}</p>
-            <p className="cert-quantity">{grant.stockAmount} test stock tokens</p>
+            <p className="cert-symbol">{mode === "unloaded" ? "—" : grant.stock}</p>
+            <p className="cert-quantity">{quantity}</p>
           </div>
 
           <div className="cert-rule" />
@@ -194,7 +219,7 @@ function Certificate({ grant, specimen = false }: { grant: DemoGrant; specimen?:
           </dl>
 
           <footer className="cert-foot">
-            <span>Reference {grant.id}</span>
+            <span>{mode === "issued" ? `Reference ${grant.id}` : "Reference unassigned"}</span>
             <span>Robinhood Chain Testnet</span>
           </footer>
         </div>
@@ -334,25 +359,44 @@ function Landing({ navigate }: { navigate: (route: Route) => void }) {
    Employer
 --------------------------------------------------------------------------- */
 
+const stockChoices = ["AAPL", "TSLA", "NVDA"] as const;
+
 function EmployerFund() {
   const [stock, setStock] = useState<DemoGrant["stock"]>("AAPL");
+  const [contractor, setContractor] = useState("");
+  const [milestone, setMilestone] = useState(specimenGrant.milestone);
+  const [deadline, setDeadline] = useState("");
+  const [usdg, setUsdg] = useState("100");
   const [message, setMessage] = useState<string>();
   const [busy, setBusy] = useState(false);
 
+  /* The certificate is the preview: it shows exactly the terms entered so far,
+     and nothing on it is asserted until the grant is actually funded. */
+  const draft: DemoGrant = {
+    id: "—",
+    contractor: contractor || "Not yet named",
+    stock,
+    stockAmount: usdg || "—",
+    usdgAmount: usdg,
+    milestone: milestone.trim() || "Not yet described",
+    deadline: deadline
+      ? new Date(deadline).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })
+      : "—",
+    deadlineTimestamp: 0,
+    state: "LOCKED"
+  };
+
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const milestone = String(form.get("milestone") ?? "").trim();
-
     try {
       setBusy(true);
       const id = await chainAdapter.fundGrant({
-        contractor: form.get("contractor") as `0x${string}`,
-        deadline: new Date(form.get("deadline") as string),
+        contractor: contractor as `0x${string}`,
+        deadline: new Date(deadline),
         stock,
-        usdgAmount: form.get("usdg") as string
+        usdgAmount: usdg
       });
-      if (milestone) writeMilestone(grantRef(id), milestone);
+      if (milestone.trim()) writeMilestone(grantRef(id), milestone.trim());
       setMessage(`Grant ${id.toString()} was funded on testnet. Share this Grant ID with the contractor.`);
     } catch (reason) {
       setMessage(reason instanceof Error ? reason.message : "Funding failed.");
@@ -379,7 +423,14 @@ function EmployerFund() {
             </legend>
             <label>
               Contractor wallet address
-              <input required name="contractor" placeholder="0x…" pattern="0x[a-fA-F0-9]{40}" />
+              <input
+                required
+                name="contractor"
+                placeholder="0x…"
+                pattern="0x[a-fA-F0-9]{40}"
+                value={contractor}
+                onChange={(event) => setContractor(event.target.value)}
+              />
             </label>
           </fieldset>
 
@@ -389,7 +440,7 @@ function EmployerFund() {
             </legend>
             <label>
               What “done” looks like
-              <input name="milestone" required defaultValue={specimenGrant.milestone} />
+              <input required name="milestone" value={milestone} onChange={(event) => setMilestone(event.target.value)} />
             </label>
             <p className="field-note">
               The contract stores the deadline and the stock. This description is kept with your agreement and shown on the
@@ -397,7 +448,13 @@ function EmployerFund() {
             </p>
             <label>
               Deadline
-              <input required name="deadline" type="date" />
+              <input
+                required
+                name="deadline"
+                type="date"
+                value={deadline}
+                onChange={(event) => setDeadline(event.target.value)}
+              />
             </label>
             <p className="field-note">If you haven't released it by this date, they can claim it automatically.</p>
           </fieldset>
@@ -406,20 +463,36 @@ function EmployerFund() {
             <legend>
               <span>03</span> What is the bonus?
             </legend>
-            <div className="form-row">
-              <label>
-                Test stock
-                <select value={stock} onChange={(event) => setStock(event.target.value as DemoGrant["stock"])}>
-                  <option>AAPL</option>
-                  <option>TSLA</option>
-                  <option>NVDA</option>
-                </select>
-              </label>
-              <label>
-                USDG amount
-                <input required name="usdg" type="number" min="1" step="0.000001" defaultValue="100" />
-              </label>
+            {/* A radio grid, not a dropdown: the three allowed test stocks should be
+                visible and comparable at a glance, the way a paper form lists options. */}
+            <div className="stock-choice" role="radiogroup" aria-label="Test stock">
+              {stockChoices.map((symbol) => (
+                <label key={symbol} className={`stock-option${stock === symbol ? " is-chosen" : ""}`}>
+                  <input
+                    type="radio"
+                    name="stock"
+                    value={symbol}
+                    checked={stock === symbol}
+                    onChange={() => setStock(symbol)}
+                  />
+                  <span className="stock-symbol">{symbol}</span>
+                  <span className="stock-caption">Test stock token</span>
+                </label>
+              ))}
             </div>
+
+            <label className="amount-field">
+              USDG amount
+              <input
+                required
+                name="usdg"
+                type="number"
+                min="1"
+                step="0.000001"
+                value={usdg}
+                onChange={(event) => setUsdg(event.target.value)}
+              />
+            </label>
           </fieldset>
 
           <button className="button button-primary" disabled={busy} type="submit">
@@ -432,48 +505,68 @@ function EmployerFund() {
           )}
         </form>
 
-        <aside className="review-slip">
-          <p className="kicker">Before you sign</p>
-          <h2>{stock} test bonus</h2>
-          <dl>
-            <div>
-              <dt>1. Create</dt>
-              <dd>Set the contractor and the deadline.</dd>
-            </div>
-            <div>
-              <dt>2. Fund</dt>
-              <dd>Approve USDG, then fund the Grant.</dd>
-            </div>
-            <div>
-              <dt>3. Hold</dt>
-              <dd>The contract holds the test stock until release or a timeout claim.</dd>
-            </div>
-          </dl>
-          <p className="review-note">The demo uses a deterministic mock adapter. Assets are test contracts, not real securities.</p>
+        {/* The preview is the certificate itself, so the employer reads the terms
+            in the same instrument the contractor will receive. */}
+        <aside className="fund-preview">
+          <p className="kicker">The agreement so far</p>
+          <Certificate grant={draft} mode="draft" />
+          <p className="preview-note">
+            Nothing here is issued. The reference is assigned when the grant is funded, and the demo's mock adapter sets
+            the stock quantity at that point. Assets are test contracts, not real securities.
+          </p>
         </aside>
       </div>
     </main>
   );
 }
 
-function EmployerGrants({ navigate }: { navigate: (route: Route) => void }) {
+function EmployerGrants({
+  navigate,
+  openGrant
+}: {
+  navigate: (route: Route) => void;
+  openGrant: (id: string) => void;
+}) {
+  const [lookup, setLookup] = useState("");
+
   return (
     <main className="page-shell">
       <Notice />
+
       <section className="page-heading">
         <p className="kicker">Employer workspace</p>
-        <h1>Your Grants</h1>
-        <p>Each funded Grant is a contract-held record. Open the contractor view to read one by its ID.</p>
-        <button className="button button-primary" onClick={() => navigate("/employer/fund")}>
-          Give a bonus
-        </button>
-      </section>
-      <section className="ledger-note">
-        <p className="kicker">Grant ledger</p>
+        <h1>Your register of Grants.</h1>
         <p>
-          This testnet MVP reads Grants by ID. Share the funded Grant ID with the contractor so they can review the
-          certificate and the claim path.
+          Every funded Grant is a contract-held record with its own reference. Open one by its ID to read the certificate
+          exactly as the contractor receives it.
         </p>
+      </section>
+
+      <section className="register">
+        <form
+          className="register-lookup"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (lookup.trim()) openGrant(lookup.trim());
+          }}
+        >
+          <label>
+            Grant ID
+            <input value={lookup} onChange={(event) => setLookup(event.target.value)} inputMode="numeric" placeholder="0" />
+          </label>
+          <button className="button button-secondary" type="submit">
+            Open certificate
+          </button>
+        </form>
+
+        <p className="register-note">
+          The contract exposes Grants by ID but offers no way to enumerate them, so this testnet MVP opens the register by
+          reference instead of listing every Grant you have funded. The ID is returned when you fund one.
+        </p>
+
+        <button className="text-action" onClick={() => navigate("/employer/fund")}>
+          Fund another bonus
+        </button>
       </section>
     </main>
   );
@@ -483,32 +576,50 @@ function EmployerGrants({ navigate }: { navigate: (route: Route) => void }) {
    Contractor
 --------------------------------------------------------------------------- */
 
-function ContractorGrant() {
-  const [grantId, setGrantId] = useState("0");
-  const [grant, setGrant] = useState<DemoGrant>({ ...specimenGrant, state: "LOCKED", stockAmount: "—", milestone: "Not recorded yet" });
+function ContractorGrant({ initialId }: { initialId?: string }) {
+  const [grantId, setGrantId] = useState(initialId ?? "0");
+  const [grant, setGrant] = useState<DemoGrant>({
+    ...specimenGrant,
+    id: "—",
+    stockAmount: "—",
+    milestone: "Not recorded",
+    deadline: "—",
+    state: "LOCKED"
+  });
   const [message, setMessage] = useState<string>();
   const [busy, setBusy] = useState(false);
+  const [loaded, setLoaded] = useState(false);
 
-  const load = async () => {
+  const load = async (raw: string) => {
     try {
       setBusy(true);
-      const reference = grantRef(BigInt(grantId));
-      const loaded = await chainAdapter.getGrant(BigInt(grantId));
-      setGrant({ ...loaded, id: reference, milestone: readMilestone(reference) ?? loaded.milestone });
-      setMessage("Grant loaded from the configured Robinhood testnet contract.");
+      const reference = grantRef(BigInt(raw));
+      const record = await chainAdapter.getGrant(BigInt(raw));
+      setGrant({ ...record, id: reference, milestone: readMilestone(reference) ?? record.milestone });
+      setLoaded(true);
+      setMessage("Read from the configured Robinhood testnet contract.");
     } catch (reason) {
+      setLoaded(false);
       setMessage(reason instanceof Error ? reason.message : "Could not read Grant.");
     } finally {
       setBusy(false);
     }
   };
 
+  /* The employer's register links here with the ID already chosen, so the grant
+     is read on arrival rather than waiting for a second click. */
+  useEffect(() => {
+    if (initialId) void load(initialId);
+    // Runs once, for the ID this view was opened with.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const act = async (action: "release" | "claim") => {
     try {
       setBusy(true);
       if (action === "release") await chainAdapter.releaseGrant(BigInt(grantId));
       else await chainAdapter.claimAfterTimeout(BigInt(grantId));
-      await load();
+      await load(grantId);
     } catch (reason) {
       setMessage(reason instanceof Error ? reason.message : "Transaction failed.");
     } finally {
@@ -526,10 +637,9 @@ function ContractorGrant() {
     <main className="contractor-page">
       <Notice />
 
-      <section className="contractor-intro">
-        <p className="kicker">Contractor view</p>
-        <h1>Your work, formally recognised.</h1>
-        <p>Load your Grant ID to see the stock bonus held for you, the milestone it recognises, and the date it becomes yours.</p>
+      {/* A thin utility strip, so the certificate below is the first thing read. */}
+      <section className="contractor-bar">
+        <h1>{loaded ? heading : "Read your Grant."}</h1>
         <div className="grant-loader">
           <label>
             Grant ID
@@ -540,38 +650,34 @@ function ContractorGrant() {
               aria-label="Grant ID"
             />
           </label>
-          <button className="button button-secondary" onClick={load} disabled={busy}>
-            Load Grant
+          <button className="button button-secondary" onClick={() => load(grantId)} disabled={busy}>
+            {busy ? "Reading…" : "Load Grant"}
           </button>
         </div>
       </section>
 
-      <Certificate grant={grant} />
+      <div className="cert-stage">
+        <Certificate grant={grant} mode={loaded ? "issued" : "unloaded"} />
+      </div>
 
-      <dl className="grant-terms">
-        <div>
-          <dt>Unlocks when</dt>
-          <dd>{grant.milestone}</dd>
-        </div>
-        <div>
-          <dt>If not released by then</dt>
-          <dd>Automatically yours on {grant.deadline}</dd>
-        </div>
-      </dl>
+      {loaded && (
+        <p className="cert-footnote">
+          Held by the contract until {grant.deadline}. If it is not released by then, it becomes yours to claim.
+        </p>
+      )}
 
       <section className="claim-panel">
         <div>
           <p className="kicker">Your next step</p>
-          <h2>{heading}</h2>
-          <p>
+          <p className="claim-copy">
             {message ??
               (state === "CLAIMED"
-                ? "The certificate has been paid to the contractor."
+                ? "The certificate has been paid out to the contractor's wallet."
                 : "The employer can release it before the deadline. If they do not, you can claim it yourself.")}
           </p>
         </div>
         <div className="claim-actions">
-          {state === "LOCKED" &&
+          {loaded && state === "LOCKED" &&
             (deadlinePassed ? (
               <button className="button button-primary" onClick={() => act("claim")} disabled={busy}>
                 Claim it yourself
@@ -584,12 +690,12 @@ function ContractorGrant() {
                 <p className="claim-note">The employer releases it. If they don’t, you can claim it yourself on {grant.deadline}.</p>
               </>
             ))}
-          {state === "UNLOCKED" && (
+          {loaded && state === "UNLOCKED" && (
             <button className="button button-primary" onClick={() => act("release")} disabled={busy}>
               Release now
             </button>
           )}
-          {state === "CLAIMED" && <span className="claimed-copy">Certificate complete</span>}
+          {loaded && state === "CLAIMED" && <span className="claimed-copy">Certificate complete</span>}
         </div>
       </section>
     </main>
@@ -598,13 +704,23 @@ function ContractorGrant() {
 
 export function App() {
   const [route, navigate] = useRoute();
+  /* The register hands a Grant ID to the contractor view, so opening one from the
+     ledger lands on a certificate that is already read. */
+  const [lookupId, setLookupId] = useState<string | undefined>(
+    () => new URLSearchParams(window.location.search).get("id") ?? undefined
+  );
+  const openGrant = (id: string) => {
+    setLookupId(id);
+    navigate("/contractor/grant");
+  };
+
   return (
     <>
       <Header navigate={navigate} />
       {route === "/" && <Landing navigate={navigate} />}
       {route === "/employer/fund" && <EmployerFund />}
-      {route === "/employer/grants" && <EmployerGrants navigate={navigate} />}
-      {route === "/contractor/grant" && <ContractorGrant />}
+      {route === "/employer/grants" && <EmployerGrants navigate={navigate} openGrant={openGrant} />}
+      {route === "/contractor/grant" && <ContractorGrant key={lookupId ?? "none"} initialId={lookupId} />}
       <footer className="site-footer">
         <span>Equity Benefit Wallet</span>
         <span>Robinhood Chain Testnet — mock contracts only</span>

@@ -458,12 +458,13 @@ nav button:hover { color: var(--brass-deep); }
 .page-heading > p { color: var(--ink-soft); font-size: 16.5px; line-height: 1.66; }
 
 .fund-layout {
+  align-items: start;
   display: grid;
-  gap: 24px;
-  grid-template-columns: minmax(0, 1.3fr) minmax(250px, .7fr);
+  gap: 32px;
+  grid-template-columns: minmax(0, 1.15fr) minmax(300px, .85fr);
 }
 
-.paper-form, .review-slip, .claim-panel, .ledger-note {
+.paper-form, .claim-panel {
   background: var(--paper-alt);
   border: 1px solid var(--line);
   padding: 28px;
@@ -493,8 +494,35 @@ legend span { color: var(--brass-deep); font-size: 14px; margin-right: 8px; }
 }
 .field-note { color: var(--ink-soft); font-size: 12px; line-height: 1.5; margin-top: 8px; }
 
-.form-row { display: grid; gap: 16px; grid-template-columns: 1fr 1fr; }
-.form-row label + label { margin-top: 0; }
+/* Stock selection as a radio grid — three visible, comparable options rather
+   than a dropdown that hides two of them. */
+.stock-choice { display: grid; gap: 10px; grid-template-columns: repeat(3, 1fr); }
+.paper-form .stock-option {
+  align-content: start;
+  border: 1px solid var(--line);
+  cursor: pointer;
+  display: grid;
+  gap: 3px;
+  padding: 14px 13px 12px;
+  position: relative;
+  transition: border-color .15s ease, background-color .15s ease;
+}
+.paper-form .stock-choice .stock-option + .stock-option { margin-top: 0; }
+.paper-form .stock-option:hover { border-color: var(--brass-light); }
+.paper-form .stock-option input { height: 1px; min-height: 0; opacity: 0; padding: 0; position: absolute; width: 1px; }
+.paper-form .stock-option:focus-within { outline: 2px solid var(--brass); outline-offset: 3px; }
+.paper-form .stock-option.is-chosen { background: var(--paper); border-color: var(--brass); }
+.paper-form .stock-symbol { color: var(--ink); font: 500 22px/1.1 Fraunces, Georgia, serif; letter-spacing: -.02em; }
+.paper-form .stock-caption { color: var(--ink-soft); font-size: 11px; }
+.paper-form .stock-option.is-chosen .stock-caption { color: var(--brass-deep); }
+
+/* The amount is the number that matters, so it is set as one. */
+.paper-form .amount-field { margin-top: 20px; }
+.paper-form .amount-field input {
+  font: 500 clamp(30px, 3.4vw, 40px)/1.1 Fraunces, Georgia, serif;
+  letter-spacing: -.03em;
+  min-height: 60px;
+}
 
 .form-notice {
   background: var(--paper);
@@ -504,24 +532,55 @@ legend span { color: var(--brass-deep); font-size: 14px; margin-right: 8px; }
   padding: 11px 13px;
 }
 
-.review-slip { align-self: start; }
-.review-slip h2 { font-size: 28px; margin-bottom: 20px; }
-.review-slip dl { border-top: 1px solid var(--line); display: grid; gap: 16px; margin: 0 0 20px; padding-top: 18px; }
-.review-slip dt { font-size: 12px; font-weight: 500; }
-.review-slip dd { color: var(--ink-soft); font-size: 13px; margin: 4px 0 0; }
-.review-note { border-top: 1px solid var(--line); color: var(--ink-soft); font-size: 12px; line-height: 1.55; padding-top: 16px; }
+/* The preview is the certificate itself, so the terms stay visible while typing. */
+.fund-preview { position: sticky; top: 96px; }
+.fund-preview .cert-core { min-height: 0; padding: 22px; }
+.fund-preview .cert-amount { margin: 22px 0 18px; }
+.fund-preview .cert-symbol { font-size: clamp(40px, 4.4vw, 56px); }
+.fund-preview .cert-field-pair { grid-template-columns: 1fr; }
+.fund-preview .cert-field-wide dd { font-size: 15px; }
+.preview-note { color: var(--ink-soft); font-size: 12px; line-height: 1.55; margin-top: 14px; }
 
-.ledger-note { font-size: 14.5px; }
-.ledger-note p + p { margin-top: 10px; }
+/* A register is a lookup, not a card: a rule and a field, not a filled panel. */
+.register { border-top: 1px solid var(--line); max-width: 720px; padding-top: 26px; }
+.register-lookup { align-items: end; display: flex; gap: 12px; }
+.register-lookup label { color: var(--ink-soft); display: grid; font-size: 12px; font-weight: 500; gap: 7px; width: 160px; }
+.register-lookup input {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 0;
+  color: var(--ink);
+  min-height: 44px;
+  padding: 10px 11px;
+}
+.register-note { color: var(--ink-soft); font-size: 13.5px; line-height: 1.6; margin: 20px 0; max-width: 62ch; }
 
-.contractor-intro { margin: 64px auto 0; max-width: 640px; }
-.contractor-intro h1 { font-size: clamp(36px, 4.4vw, 56px); line-height: 1.06; margin-bottom: 16px; }
-.contractor-intro > p { color: var(--ink-soft); font-size: 16.5px; line-height: 1.66; }
+/* ---------------------------------------------------------------------------
+   Contractor — the certificate is the page.
+--------------------------------------------------------------------------- */
+.contractor-bar {
+  align-items: end;
+  display: flex;
+  gap: 32px;
+  justify-content: space-between;
+  margin: 56px auto 0;
+  max-width: 640px;
+}
+.contractor-bar h1 { font-size: clamp(24px, 2.6vw, 32px); line-height: 1.15; }
 
-.grant-loader { align-items: end; display: flex; gap: 10px; margin-top: 24px; }
+.grant-loader { align-items: end; display: flex; gap: 10px; }
 .grant-loader label { color: var(--ink-soft); display: grid; font-size: 12px; font-weight: 500; gap: 7px; width: 132px; }
 
-.contractor-page .cert { margin: 52px auto 0; max-width: 520px; }
+.cert-stage { margin: 30px auto 0; max-width: 560px; }
+
+.cert-footnote {
+  color: var(--ink-soft);
+  font-size: 13.5px;
+  line-height: 1.62;
+  margin: 22px auto 0;
+  max-width: 520px;
+  text-align: center;
+}
 
 .claim-panel {
   align-items: flex-start;
@@ -531,24 +590,11 @@ legend span { color: var(--brass-deep); font-size: 14px; margin-right: 8px; }
   margin: 34px auto 0;
   max-width: 640px;
 }
-.claim-panel h2 { font-size: 26px; margin-bottom: 10px; }
 .claim-panel p { color: var(--ink-soft); font-size: 14.5px; line-height: 1.6; max-width: 38ch; }
+.claim-panel .claim-copy { font-size: 15px; max-width: 44ch; }
 .claim-actions { display: grid; flex: 0 0 190px; gap: 10px; }
 .claim-note { color: var(--ink-soft); font-size: 12.5px; line-height: 1.5; max-width: none !important; }
 .claimed-copy { color: var(--brass-deep); font-size: 14px; font-weight: 500; }
-
-/* The two terms a contractor should never have to hunt for. */
-.grant-terms {
-  border-top: 1px solid var(--line);
-  display: grid;
-  gap: 24px;
-  grid-template-columns: 1fr 1fr;
-  margin: 34px auto 0;
-  max-width: 520px;
-  padding-top: 20px;
-}
-.grant-terms dt { color: var(--ink-soft); font-size: 11px; font-weight: 500; margin-bottom: 5px; }
-.grant-terms dd { font: 400 16px/1.45 Fraunces, Georgia, serif; margin: 0; }
 
 /* ---------------------------------------------------------------------------
    Responsive
@@ -567,6 +613,7 @@ legend span { color: var(--brass-deep); font-size: 14px; margin-right: 8px; }
   .backstop { padding-top: clamp(72px, 10vw, 110px); }
   .backstop-head { gap: 16px; grid-template-columns: 1fr; }
   .fund-layout { grid-template-columns: 1fr; }
+  .fund-preview { margin: 0 auto; max-width: 520px; position: static; }
 }
 
 @media (max-width: 640px) {
@@ -577,11 +624,16 @@ legend span { color: var(--brass-deep); font-size: 14px; margin-right: 8px; }
   .hero-actions .button { flex: 1 1 auto; }
   .cert-core { min-height: 468px; padding: 22px; }
   .cert-symbol { font-size: 68px; }
-  .cert-field-pair, .form-row, .grant-terms { grid-template-columns: 1fr; }
+  .cert-field-pair { grid-template-columns: 1fr; }
+  .contractor-bar { align-items: stretch; flex-direction: column; gap: 18px; }
+  .register-lookup { align-items: stretch; flex-direction: column; }
+  .register-lookup label { width: 100%; }
+  .paper-form .stock-option { padding: 12px 10px 10px; }
+  .paper-form .stock-symbol { font-size: 19px; }
   .seal { min-width: 64px; right: -10px; top: -10px; }
   .ledger li { gap: 18px; grid-template-columns: 32px minmax(0, 1fr); }
   .deadline-rule .section-inner { align-items: flex-start; flex-direction: column; gap: 6px; }
-  .paper-form, .review-slip, .claim-panel, .ledger-note { padding: 22px; }
+  .paper-form, .claim-panel { padding: 22px; }
   .claim-panel { align-items: stretch; flex-direction: column; }
   .claim-actions { flex-basis: auto; width: 100%; }
   .grant-loader { align-items: stretch; flex-direction: column; }
