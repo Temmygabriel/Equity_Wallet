@@ -177,8 +177,14 @@ describe("GrantEscrow", function () {
     const { grantId } = await fundAapl(fixture);
     const fundedGrant = await fixture.escrow.grants(grantId);
 
-    expect(() => fixture.escrow.interface.getFunction("cancelGrant")).to.throw();
-    expect(() => fixture.escrow.interface.getFunction("setGrantDeadline")).to.throw();
+    // Assert against the ABI surface directly. ethers v6 returns null from
+    // interface.getFunction() for an unknown name instead of throwing, so the
+    // previous .to.throw() form could never pass even though the invariant held.
+    const functionNames = fixture.escrow.interface.fragments
+      .filter((fragment) => fragment.type === "function")
+      .map((fragment) => (fragment as { name: string }).name);
+    expect(functionNames).to.not.include("cancelGrant");
+    expect(functionNames).to.not.include("setGrantDeadline");
     await expect(fixture.escrow.connect(fixture.employer).fundGrant(grantId, USDG_AMOUNT, await fixture.tsla.getAddress(), STOCK_AMOUNT))
       .to.be.revertedWith("GrantEscrow: grant not created");
 
