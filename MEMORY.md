@@ -4,6 +4,18 @@
 
 Equity Benefit Wallet is a hackathon MVP for helping employers issue and manage equity-related benefits for contractors through a wallet-oriented experience.
 
+## Hackathon submission context
+
+- Event: **Arbitrum Open House Singapore, Online Buildathon** — competing for the Robinhood Chain reserved prize slot.
+- Submissions close **4 October 2026**. The Build Spec was written 24 Sep 2026 against a 10-day plan, so the plan's day numbers no longer match the calendar.
+- The two original specs live **outside the repository** (`equity-benefit-wallet-design-spec.md`, `equity-benefit-wallet-build-spec.md`) and are not committed. Build Spec §5 is the day-by-day plan and §6 is the submission checklist; those unchecked items are the definition of done, not the frontend polish.
+- The checklist requires: a deployed, explorer-verified testnet contract; a public repo with a plain-language README plus a security section; a demo video of the whole loop; and explicit written notes on the Robinhood Chain slot, the USDG integration, and what is out of scope.
+
+## Vercel deployment
+
+- Production is `https://equitywallet-psi.vercel.app`, served from `main`. It has been confirmed publicly reachable and confirmed to **not** contain any of the redesign.
+- **Preview deployments are behind Vercel Deployment Protection.** Any preview URL returns Vercel's "Login – Vercel" page with HTTP 200 to an unauthenticated client, so HTTP status checks and `curl` cannot validate a preview, and every route appears to return 200. Visual validation of a preview requires a browser signed in to Vercel. Do not report a preview as validated on the strength of a 200.
+
 ## Core concept
 
 The product represents a contractor benefit grant, with an employer-side issuance path and a contractor-side benefit wallet. The MVP contract now implements the escrow lifecycle `CREATED -> FUNDED -> RELEASED`; there is no cancellation state.
@@ -69,3 +81,12 @@ npm workspaces; Hardhat, Solidity `0.8.24`, and TypeScript for contracts; React,
 - `deploy:demo:testnet` checks chain ID `46630`, deploys MockUSDG, mock AAPL/TSLA/NVDA, MockSwapAdapter, and GrantEscrow, and mints initial mock USDG to the deployer.
 - The mock adapter is deterministic: its default rate is 1:1 at 18 decimals and it enforces `minStockOut`. The existing fixed-output mode is retained solely for unit tests.
 - The demo contract addresses are never committed; copy the script output into `frontend/.env.local` after deployment.
+
+## Build Spec items that need a stated position, not an assumption
+
+These are places where the Build Spec and the implemented reality diverge. Each needs to be written down plainly in the submission rather than glossed over.
+
+- **Rule 9 (0x swap).** §3 says the swap runs through the 0x Swap API, "confirmed live on Robinhood Chain". 0x covers Robinhood Chain mainnet (`4663`) but not testnet (`46630`), so testnet uses `MockSwapAdapter`. Never describe this as 0x integration.
+- **Rule 15 (jurisdiction gate).** The spec requires an openly-labelled demo-only jurisdiction gate on the frontend. **It does not exist in the frontend.** Either build it as an explicitly-labelled stub or state that it was not built.
+- **Rule 7 (`tokenSelectionLocked`).** There is no such flag. The same guarantee holds structurally — no function can mutate a funded grant's `selectedToken` — so describe the guarantee, not the flag.
+- **Rule 12 (`Math.mulDiv`).** The escrow does no fixed-point conversion, because the adapter owns conversion. `mulDiv` may have no corresponding code; document the rounding position instead of claiming compliance.
