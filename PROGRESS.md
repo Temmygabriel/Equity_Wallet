@@ -2,7 +2,7 @@
 
 ## Current state
 
-The repository contains the project scaffold, MVP `GrantEscrow` core contract/test suite, viem-connected Robinhood Chain testnet mock demo, deployment scripts, and CI workflow. No testnet deployment address is committed.
+The repository contains the project scaffold, MVP `GrantEscrow` core contract/test suite, viem-connected Robinhood Chain testnet mock demo, deployment scripts, and CI workflow. No testnet deployment address is committed. CI's single contract-test failure has been repaired and the frontend art direction is being reworked, both on `feat/editorial-redesign`.
 
 ## Completed steps
 
@@ -14,11 +14,15 @@ The repository contains the project scaffold, MVP `GrantEscrow` core contract/te
 6. Step 6 end-to-end mock demo: added a chain-guarded mock deployment script, deterministic mock swap conversion, and viem wallet/contract actions for the testnet UI.
 7. Step 7 validation: attempted compilation, contract tests, workspace typechecking, and frontend build. The environment's npm registry returned `403 Forbidden` for `@nomicfoundation/hardhat-toolbox`, leaving dependencies unavailable. As a result, compile/test could not find `hardhat`, and typecheck/build reported missing installed dependencies. `git diff --check` passed and the working tree was clean before documentation updates.
 8. Step 8 dependency diagnosis: confirmed there is no usable `node_modules` installation (`.bin`, Hardhat, and Hardhat Toolbox are absent), no lockfile, and an empty npm cache. `npm install --offline` failed with `ENOTCACHED`; the configured registry is `https://registry.npmjs.org/` through the environment proxy. Replacing the Toolbox is technically possible only with its individual Hardhat plugins (ethers, Chai matchers, network helpers, Chai/types), but cannot unblock this environment because no dependencies are locally available and the registry access restriction remains. No dependency or application configuration was changed.
-8. Step 8 dependency diagnosis: confirmed there is no usable `node_modules` installation (`.bin`, Hardhat, and Hardhat Toolbox are absent), no lockfile, and an empty npm cache. `npm install --offline` failed with `ENOTCACHED`; the configured registry is `https://registry.npmjs.org/` through the environment proxy. Replacing the Toolbox is technically possible only with its individual Hardhat plugins (ethers, Chai matchers, network helpers, Chai/types), but cannot unblock this environment because no dependencies are locally available and the registry access restriction remains. No dependency or application configuration was changed.
+9. Step 9 CI repair (branch `feat/editorial-redesign`): every CI run had been failing on one contract test, `has no cancellation or grant mutation path after funding`. It asserted that `interface.getFunction("cancelGrant")` would throw, but ethers v6 returns `null` for an unknown name, so the assertion could never pass. Replaced it with an assertion over the interface's ABI fragment list, which tests the same invariant without depending on ethers' error behaviour. The contract itself was correct and was **not** changed. Because `npm test` failed first, CI had never reached the frontend typecheck or build steps, so the frontend was previously unvalidated in CI.
+10. Step 10 frontend art direction (branch `feat/editorial-redesign`): returned the token set to the Design Spec's cool paper/ink/brass values, restricted type to weights 400/500, removed the letter-spaced all-caps eyebrows and middle-dot meta strings the spec rules out, and rebuilt the landing page as hero → backstop ledger → assurance. The certificate gained a guilloché underprint and a seal that overlaps its outer edge and renders only when the grant is no longer held. The employer and contractor pages inherit the new system; their composition is still the previous layout and is the next task. Two honesty fixes were included: the milestone description is not stored by the contract, so it is now labelled as such on the certificate and kept in browser storage against the grant reference; and the claim action renders only at or after the on-chain deadline, via a new additive `deadlineTimestamp` field on `DemoGrant` (no contract interaction changed).
 
 ## Git baseline
 
-- Current branch: `work`
+- Current branch: `feat/editorial-redesign`
+- `main` is at `8ba21f9` (`feat: polish frontend UX and configure Vercel`) and is the deployed Vercel production branch.
+- `origin/feat/polished-ui-vercel-main` is fully merged into `main`.
+- `origin/codex/inspect-equity-benefit-wallet-project-status-jv0w53` holds an unmerged earlier redesign attempt and is not built on.
 - Starting commit before Step 2: `1e99c8c` (`Initialize repository`)
 
 ## Implemented contract behavior

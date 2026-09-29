@@ -47,6 +47,11 @@ The product represents a contractor benefit grant, with an employer-side issuanc
 - The certificate component must retain the `cert → cert-inner → cert-core` composition, a wax-seal state badge, left-aligned landing hero copy, a centered certificate, visible focus states, and reduced-motion support.
 - Certificate states are `LOCKED`, `UNLOCKED`, and `CLAIMED`; green is reserved for the unlocked badge.
 - The frontend uses viem through `chainAdapter.ts` for EIP-1193 wallet connection and real testnet reads/writes. It is configured only from deployment-produced `VITE_*` addresses and must display that mock assets are not real securities.
+- Tokens follow the Design Spec's cool values (`--paper #FAFAF7`, `--ink #16233D`, `--brass #8A6A34`), not warm cream. Type uses only Fraunces 400/500 and Inter 400/500. Letter-spaced all-caps eyebrow labels and middle-dot meta strings are prohibited by the Design Spec and must not be reintroduced.
+- Certificate seal sits on the certificate's outer edge (`−14px` offsets, `−8deg`) and renders **only** when the grant is no longer held; a held grant shows a quiet "Held until [date]" line instead. The certificate carries a generated guilloché underprint as its security-print motif.
+- The `UNLOCKED` certificate state is not reachable from chain data: `GrantEscrow.Status` is `CREATED | FUNDED | RELEASED`, so `chainAdapter` maps `1 → LOCKED` and `2 → CLAIMED`. `UNLOCKED` currently appears only on the landing specimen certificate.
+- **The milestone description is not stored on-chain.** The `Grant` struct has no milestone field and `fundGrant` does not accept one. The frontend keeps the description in browser `localStorage` against the grant reference and labels it honestly where it is unavailable. Adding an on-chain milestone field would be a contract change and needs explicit approval.
+- `DemoGrant` exposes `deadlineTimestamp` (unix seconds) so the UI can tell whether the timeout claim is available. `releaseGrant` is employer-only and pre-deadline; `claimAfterTimeout` is contractor-only and at/after the deadline, so exactly one action is ever valid.
 
 ## Explicitly out of scope for this scaffold
 

@@ -33,7 +33,7 @@ const erc20Abi = [
 
 type Config = { grantEscrow: Address; usdg: Address; stocks: Record<"AAPL" | "TSLA" | "NVDA", Address> };
 export type GrantState = "LOCKED" | "UNLOCKED" | "CLAIMED";
-export type DemoGrant = { id: string; contractor: string; stock: "AAPL" | "TSLA" | "NVDA"; stockAmount: string; usdgAmount: string; milestone: string; deadline: string; state: GrantState };
+export type DemoGrant = { id: string; contractor: string; stock: "AAPL" | "TSLA" | "NVDA"; stockAmount: string; usdgAmount: string; milestone: string; deadline: string; deadlineTimestamp: number; state: GrantState };
 export type FundGrantInput = { contractor: Address; deadline: Date; stock: "AAPL" | "TSLA" | "NVDA"; usdgAmount: string; minStockOut?: string };
 
 declare global { interface Window { ethereum?: EIP1193Provider } }
@@ -74,7 +74,7 @@ export const chainAdapter = {
     if (!employer || employer === "0x0000000000000000000000000000000000000000") throw new Error("Grant was not found on the configured test contract.");
     const stock = stockByAddress(configured.stocks, selectedToken);
     if (!stock) throw new Error("Grant uses a token outside the configured test-stock allowlist.");
-    return { id: `GRANT-${grantId.toString().padStart(4, "0")}`, contractor: `${contractor.slice(0, 6)}…${contractor.slice(-4)}`, stock, stockAmount: formatUnits(rawEscrowAmount, 18), usdgAmount: "held", milestone: "Milestone recorded offchain for this testnet demo", deadline: new Date(Number(deadline) * 1000).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }), state: status === 1 ? "LOCKED" : status === 2 ? "CLAIMED" : "LOCKED" };
+    return { id: `GRANT-${grantId.toString().padStart(4, "0")}`, contractor: `${contractor.slice(0, 6)}…${contractor.slice(-4)}`, stock, stockAmount: formatUnits(rawEscrowAmount, 18), usdgAmount: "held", milestone: "Not stored by the testnet contract", deadline: new Date(Number(deadline) * 1000).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }), deadlineTimestamp: Number(deadline), state: status === 1 ? "LOCKED" : status === 2 ? "CLAIMED" : "LOCKED" };
   },
   fundGrant: async (input: FundGrantInput): Promise<bigint> => {
     const configured = config();
