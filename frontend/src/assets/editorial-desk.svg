@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 960" role="img" aria-labelledby="title desc">
+  <title id="title">A formal certificate on a dark walnut desk</title>
+  <desc id="desc">Original editorial still-life artwork showing layered paper, a brass pen and a dark desk surface.</desc>
+  <rect width="1440" height="960" fill="#1d241e"/>
+  <path fill="#293127" d="M0 0h1440v146L0 380z"/>
+  <path fill="#161b16" d="M0 663 1440 375v585H0z"/>
+  <path fill="#4e3d20" d="m950 0 490 0v960H810z"/>
+  <path fill="#604d2a" d="m1030 0 38 960h-31L999 0zM1210 0l19 960h-27l-18-960zM1365 0l-22 960h-19l20-960z" opacity=".48"/>
+  <path fill="#e8ddc5" d="m115 245 679-136 225 603-681 137z"/>
+  <path fill="#c9b989" d="m139 259 651-128 12 32-649 130z"/>
+  <path fill="#f6f0df" d="m175 301 586-116 190 515-588 117z"/>
+  <path fill="#b09245" d="m193 348 449-88 4 16-449 89zM218 411l546-108 3 10-546 109zM239 463l355-70 3 10-356 71zM273 552l515-102 3 10-515 102zM294 603l432-85 3 10-432 86z" opacity=".65"/>
+  <path fill="#803c32" d="m683 513 83-17 29 78-83 17z"/>
+  <path fill="#f2d1b5" d="m700 527 49-10 12 33-49 10z"/>
+  <path fill="#aa8335" d="m807 144 25-5 254 678-25 5z"/>
+  <path fill="#d1b260" d="m829 139 17-3 254 678-17 3z"/>
+  <path fill="#151914" d="m1071 805 31-6 11 30-31 6z"/>
+  <path fill="#8d7032" d="m100 838 875-175 13 36-874 177z" opacity=".5"/>
+  <path fill="#c6b78f" d="m93 833 881-175 4 12-880 177z" opacity=".82"/>
+</svg>

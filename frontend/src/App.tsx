@@ -1,5 +1,6 @@
 import { type FormEvent, useMemo, useState } from "react";
 import { chainAdapter, type DemoGrant, type GrantState } from "./chainAdapter";
+import editorialDesk from "./assets/editorial-desk.svg";
 
 const routes = ["/", "/employer/fund", "/employer/grants", "/contractor/grant"] as const;
 type Route = (typeof routes)[number];
@@ -58,16 +59,18 @@ function Notice() { return <p className="testnet-notice">Robinhood Chain Testnet
 function Landing({ navigate }: { navigate: (route: Route) => void }) {
   return <main className="landing">
     <Notice />
-    <section className="hero">
+    <section className="hero-cover">
+      <img className="hero-art" src={editorialDesk} alt="Formal certificate and brass pen on a dark desk" />
       <div className="hero-copy">
         <p className="eyebrow">For thoughtful contractor rewards</p>
         <h1>Give a bonus<br /><em>that stays meaningful.</em></h1>
-        <p className="lede">An employer gives a contractor a stock-based bonus. The contract holds it until the agreed milestone and deadline.</p>
+        <p className="lede">Give a contractor a stock-based bonus. The contract holds it until the agreed work is done — or the deadline lets them claim it.</p>
         <div className="actions"><button className="button button-primary" onClick={() => navigate("/employer/fund")}>Give a bonus</button><button className="button button-secondary" onClick={() => navigate("/contractor/grant")}>Claim your bonus</button></div>
       </div>
-      <div className="hero-instrument"><div className="instrument-label">A formal record of work</div><Certificate grant={initialGrant} /></div>
+      <div className="hero-certificate"><p>Contract-held Grant</p><Certificate grant={initialGrant} /></div>
     </section>
-    <section className="sequence" aria-labelledby="how-it-works"><div className="sequence-intro"><p className="eyebrow">A clear agreement, held in code</p><h2 id="how-it-works">A bonus with a<br />built-in backstop.</h2></div><ol><li><span>01</span><p><strong>Choose the bonus.</strong> The employer creates a Grant for a contractor and the work they agreed.</p></li><li><span>02</span><p><strong>The contract holds it.</strong> Test stock stays in the Grant while the work is completed.</p></li><li><span>03</span><p><strong>Release or claim.</strong> The employer releases it, or the contractor claims after the deadline.</p></li></ol></section>
+    <section className="editorial-intro"><p className="eyebrow">A clear agreement, held in code</p><p>Not a promise in an inbox. A <strong>Grant</strong> turns meaningful work into a formal, visible instrument — designed to be understood by the employer and owned by the contractor.</p></section>
+    <section className="sequence" aria-labelledby="how-it-works"><div className="sequence-intro"><h2 id="how-it-works">The agreement,<br />with a backstop.</h2></div><ol><li><span>01</span><p><strong>Employer creates the Grant.</strong> They choose the bonus, contractor and milestone.</p></li><li><span>02</span><p><strong>The contract holds it.</strong> Test stock stays reserved while the work is completed.</p></li><li><span>03</span><p><strong>Release when work lands.</strong> The employer confirms the milestone and releases the bonus.</p></li><li className="deadline-step"><span>04</span><p><strong>Deadline passes.</strong> If nothing happens, the contractor can claim it themselves.</p></li></ol></section>
     <section className="assurance"><div><p className="eyebrow">The quiet part, made certain</p><h2>No trust required.</h2></div><p>Your bonus isn't held by a company or an app. A contract holds it. If your employer goes quiet, you can claim it yourself, automatically, on the date shown above — no lawyer, no waiting on goodwill.</p></section>
   </main>;
 }
