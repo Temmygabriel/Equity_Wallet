@@ -1,0 +1,171 @@
+/* ---------------------------------------------------------------------------
+   Base. Reset, page, type scale, shared controls, footer, motion defaults.
+--------------------------------------------------------------------------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: var(--paper);
+  color: var(--ink);
+  font: 400 16px/1.6 Inter, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+.serif {
+  font-family: Fraunces, Georgia, serif;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+p {
+  margin: 0;
+}
+
+ul,
+ol,
+dl,
+dd {
+  margin: 0;
+  padding: 0;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: progress;
+}
+
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+/* Visible focus on every interactive element; brass on paper, brass-hi on desk. */
+:focus-visible {
+  outline: 2px solid var(--brass-hi);
+  outline-offset: 3px;
+}
+
+[data-surface="paper"] :focus-visible {
+  outline-color: var(--brass);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.wrap {
+  width: min(1240px, calc(100% - 48px));
+  margin: 0 auto;
+}
+
+/* --- Controls ------------------------------------------------------------ */
+
+.btn {
+  border-radius: var(--radius);
+  padding: 14px 22px;
+  font-weight: 500;
+  font-size: 15px;
+  min-height: 44px;
+}
+
+.btn:hover {
+  opacity: 0.85;
+}
+
+.btn-light {
+  background: var(--on-desk);
+  color: var(--ink);
+}
+
+.btn-ink {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.lnk {
+  font-size: 15px;
+  border-bottom: 1px solid var(--brass-hi);
+  padding-bottom: 2px;
+}
+
+[data-surface="paper"] .lnk {
+  border-bottom-color: var(--brass);
+}
+
+.lnk:hover,
+.text-action:hover {
+  opacity: 0.85;
+}
+
+.text-action {
+  font-size: 15px;
+  border-bottom: 1px solid currentColor;
+  padding-bottom: 2px;
+}
+
+/* --- Footer -------------------------------------------------------------- */
+
+.site-footer {
+  border-top: 1px solid var(--line);
+  padding: 26px var(--gutter) 34px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 24px;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.site-footer .foot-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1 1 320px;
+}
+
+/* --- Motion -------------------------------------------------------------- */
+
+/* Every animation in the spec renders in its end state under reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    transition-delay: 0ms !important;
+  }
+}

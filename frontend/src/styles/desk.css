@@ -1,0 +1,188 @@
+/* ---------------------------------------------------------------------------
+   The desk. One dark surface: the landing hero and the contractor page.
+   Grain is the mockup's inline feTurbulence data URI at soft-light.
+--------------------------------------------------------------------------- */
+
+.desk {
+  position: relative;
+  min-height: 100svh;
+  color: var(--on-desk);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: radial-gradient(90% 80% at 68% 45%, var(--desk-lit) 0%, var(--desk-mid) 45%, var(--desk) 100%);
+}
+
+.desk::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.5;
+  mix-blend-mode: soft-light;
+  pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.desk > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* --- Header -------------------------------------------------------------- */
+
+.site-header {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 26px var(--gutter);
+}
+
+[data-surface="desk"] .site-header {
+  background: transparent;
+}
+
+[data-surface="paper"] .site-header {
+  background: var(--paper);
+  border-bottom: 1px solid var(--line);
+}
+
+.wordmark {
+  font: 400 20px/1 Fraunces, Georgia, serif;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.wordmark em {
+  font-style: italic;
+  color: var(--brass);
+}
+
+[data-surface="desk"] .wordmark {
+  color: var(--on-desk);
+}
+
+[data-surface="desk"] .wordmark em {
+  color: var(--brass-hi);
+}
+
+.site-header nav {
+  display: flex;
+  gap: 28px;
+  font-size: 13px;
+}
+
+[data-surface="desk"] .site-header nav {
+  color: var(--on-desk-soft);
+}
+
+[data-surface="paper"] .site-header nav {
+  color: var(--ink-soft);
+}
+
+.site-header nav button:hover {
+  opacity: 0.85;
+}
+
+.wallet-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: var(--radius);
+  padding: 9px 15px;
+  font-size: 13px;
+  font-weight: 500;
+  min-height: 40px;
+}
+
+[data-surface="desk"] .wallet-button {
+  border: 1px solid rgba(241, 239, 231, 0.4);
+  color: var(--on-desk);
+}
+
+[data-surface="paper"] .wallet-button {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.wallet-button:hover {
+  opacity: 0.85;
+}
+
+.wallet-button.is-wrong {
+  color: var(--red-desk);
+}
+
+[data-surface="paper"] .wallet-button.is-wrong {
+  color: var(--red-soft);
+}
+
+[data-surface="paper"] .wallet-button.is-wrong {
+  background: transparent;
+  border: 1px solid var(--line);
+}
+
+.wallet-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green-hi);
+  flex: none;
+}
+
+/* A 1px strip under the header, never a coloured slab. */
+.wallet-error {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 var(--gutter);
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  font-size: 13px;
+  color: var(--ink-soft);
+  background: var(--paper);
+}
+
+.wallet-error .icon {
+  flex: none;
+  margin-top: 2px;
+  color: var(--red-soft);
+}
+
+.wallet-error button {
+  margin-left: auto;
+  flex: none;
+  display: inline-flex;
+}
+
+.wallet-error button:hover {
+  opacity: 0.85;
+}
+
+/* --- Testnet notice ------------------------------------------------------ */
+
+/* Desk pages: quiet, bottom-left, never a banner. */
+.notice-desk {
+  position: absolute;
+  left: var(--gutter);
+  bottom: 20px;
+  z-index: 2;
+  font-size: 12px;
+  color: var(--on-desk-mute);
+  max-width: 46ch;
+}
+
+@media (max-width: 860px) {
+  .notice-desk {
+    position: static;
+    padding: 0 24px 20px;
+  }
+
+  .site-header nav {
+    display: none;
+  }
+}

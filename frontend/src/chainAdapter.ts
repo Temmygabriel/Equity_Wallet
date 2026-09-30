@@ -67,6 +67,18 @@ const stockByAddress = (addresses: Config["stocks"], address: Address): "AAPL" |
 
 export const chainAdapter = {
   connectWallet: async () => (await wallet()).account,
+  /* Additive (spec §10.3). Reads eth_accounts, which never prompts, so the app
+     can render a connected state on load and can resolve the viewer's role.
+     Returns undefined when no provider exists. */
+  currentAccount: async (): Promise<string | undefined> => {
+    if (!window.ethereum) return undefined;
+    try {
+      const accounts = (await window.ethereum.request({ method: "eth_accounts" })) as string[];
+      return accounts[0];
+    } catch {
+      return undefined;
+    }
+  },
   getGrant: async (grantId: bigint): Promise<DemoGrant> => {
     const configured = config();
     const result = await publicClient.readContract({ address: configured.grantEscrow, abi: grantEscrowAbi, functionName: "grants", args: [grantId] });

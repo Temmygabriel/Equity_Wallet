@@ -1,0 +1,49 @@
+/* ---------------------------------------------------------------------------
+   Tokens. Direction A "The Desk". Values ported from the approved mockup
+   (EBW_DIRECTION_A_DEEPSEEK_SPEC.md §2), not re-derived.
+
+   Two deliberate deviations, both recorded in PROGRESS.md:
+   - No prefers-color-scheme dark variant. The light paper / dark desk system is
+     the design, and auto-inverting --paper would break it. The spec's own token
+     block (§2) lists no dark values; the mockup's dark block was not ported.
+   - --red-desk is added. §6 asks for --red-soft on the desk header, but
+     #8C3B32 on --desk #0E1830 measures 2.33:1, which fails WCAG AA. §13 makes
+     contrast the governing rule, so a lightened desk-surface error tone is used.
+--------------------------------------------------------------------------- */
+:root {
+  --ink: #16233d;
+  --ink-soft: #4a5670;
+  --paper: #fafaf7;
+  --line: #d8d3c4;
+
+  --brass: #8a6a34;
+  --brass-deep: #6e5527;
+  --brass-hi: #c9a76b;
+
+  --green: #2f5233;
+  --green-hi: #6fa37a;
+  --red-soft: #8c3b32;
+  --red-desk: #e8897c;
+
+  /* Certificate paper */
+  --stock: #f6f2e6;
+  --stock-line: #c9c2ac;
+  --stock-brass: #b39a66;
+
+  /* Desk */
+  --desk: #0e1830;
+  --desk-mid: #12203f;
+  --desk-lit: #1e3158;
+  --on-desk: #f1efe7;
+  --on-desk-soft: #b7becb;
+  --on-desk-mute: #8994ab;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ease-strap: cubic-bezier(0.6, 0, 0.2, 1);
+  --ease-stamp: cubic-bezier(0.2, 0.8, 0.3, 1.2);
+
+  /* Layout */
+  --gutter: max(24px, calc((100vw - 1240px) / 2));
+  --radius: 3px;
+}
