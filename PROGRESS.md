@@ -2,7 +2,7 @@
 
 ## Current state
 
-The repository contains the project scaffold, MVP `GrantEscrow` core contract/test suite, viem-connected Robinhood Chain testnet mock demo, deployment scripts, and CI workflow. **No testnet deployment address is committed yet** — the deployment is now unblocked and is the next step. CI is green on `feat/editorial-redesign`, and the frontend has been rebuilt end to end on **Direction A "The Desk"** per `EBW_DIRECTION_A_DEEPSEEK_SPEC.md`. Nothing is merged to `main`; the deployed production site still serves `main` at `8ba21f9`.
+The repository contains the project scaffold, MVP `GrantEscrow` core contract/test suite, viem-connected Robinhood Chain testnet mock demo, deployment scripts, and CI workflow. **No testnet deployment address is committed yet** — the deployment is now unblocked and is the next step. The frontend has been rebuilt end to end on **Direction A "The Desk"** per `EBW_DIRECTION_A_DEEPSEEK_SPEC.md`, and that rebuild is now **merged to `main`** at `2fe05d1` (Step 15). Work continues directly on `main` from here.
 
 Target: **Arbitrum Open House Singapore, Online Buildathon** (Robinhood Chain reserved slot). Submissions close **4 Oct 2026**. See `equity-benefit-wallet-build-spec.md` §5 for the day-by-day plan and §6 for the submission checklist — the unchecked items there are the remaining work.
 
@@ -32,6 +32,8 @@ Target: **Arbitrum Open House Singapore, Online Buildathon** (Robinhood Chain re
 
 14. Step 14 deploy unblocking (branch `feat/editorial-redesign`, commit `e2382fe`): deploying needs Hardhat and solc, which this development machine cannot install, so `.github/workflows/deploy-testnet.yml` was added to run the demo deployment on a GitHub runner — `workflow_dispatch` only, because the job spends testnet ETH from a funded key. It fails early with a readable message when `DEPLOYER_PRIVATE_KEY` is absent and never enables shell tracing, which would print the key. The deploy output is `tee`d into the job summary so the five `VITE_*` addresses are readable without opening the raw log. **Required repository secret: `DEPLOYER_PRIVATE_KEY`.** Two accounts were funded with 0.01 testnet ETH each; see the deployment record.
 
+15. Step 15 merge to `main` (commit `2fe05d1`): the Direction A redesign was fast-forwarded onto `main`, which had not moved from `8ba21f9`, so the merge was clean and needed no conflict resolution. The branch is 14 commits. Two things this unblocks: **the `Deploy testnet demo` workflow is only listed in the Actions UI once its file is on the default branch**, so it could not be dispatched before this merge; and Vercel's production site now builds the redesign. `main` was previously **red** — the last two runs (`8ba21f9`, `ac94b58`) failed on the contract test repaired in Step 9 — so a green run on `2fe05d1` is the first green `main` in this repository's history. Daily work continues on `main` from here rather than on a long-lived branch, so integration problems surface as they are introduced instead of at the end.
+
 ## Deploying: what is and is not needed
 
 The demo path (`deploy-testnet-demo.ts`) is self-contained — it deploys its own `MockUSDG`, mock AAPL/TSLA/NVDA, `MockSwapAdapter` and `GrantEscrow`, then mints 100,000 mock USDG to the deployer. **No official testnet token addresses are needed**, and the `USDG` / `SWAP_ADAPTER` / `AAPL` / `TSLA` / `NVDA` keys in `.env.example` belong to the *other* script, `deploy-grant-escrow.ts`, which is not the demo path. The only external requirement is native testnet ETH for gas.
@@ -40,9 +42,10 @@ The demo path (`deploy-testnet-demo.ts`) is self-contained — it deploys its ow
 
 ## Git baseline
 
-- Current branch: `feat/editorial-redesign`
-- Branch commits: `e0dbc95` (contracts test repair), `4c803bb` (landing rebuilt around the certificate), `4e53e51` (employer + contractor recomposed), then the Direction A checkpoints `4ab268f` → `f195809` (certificate, landing, gate, fund, contractor, register, polish) and `e2382fe` (deploy workflow).
-- `main` is at `8ba21f9` (`feat: polish frontend UX and configure Vercel`) and is the deployed Vercel production branch. Production has been confirmed to still serve this build; none of the redesign is in production.
+- Current branch: `main` (the redesign was merged here in Step 15; continue on `main`).
+- `main` is at `2fe05d1`, the merge of the Direction A redesign and the docs/cleanup commit. This is now the deployed Vercel production branch, so production will build the redesign on the next deploy.
+- `feat/editorial-redesign` is fully merged into `main` and is no longer needed as a working branch. Its history: `e0dbc95` (contracts test repair), `4c803bb` (landing rebuilt around the certificate), `4e53e51` (employer + contractor recomposed), the Direction A checkpoints `4ab268f` → `f195809` (certificate, landing, gate, fund, contractor, register, polish), `e2382fe` (deploy workflow), `2fe05d1` (cleanup + docs).
+- Before the merge, `main` was at `8ba21f9` (`feat: polish frontend UX and configure Vercel`) and its last two CI runs failed.
 - `origin/feat/polished-ui-vercel-main` is fully merged into `main`.
 - `origin/codex/inspect-equity-benefit-wallet-project-status-jv0w53` holds an unmerged earlier redesign attempt and is not built on.
 - Starting commit before Step 2: `1e99c8c` (`Initialize repository`)
@@ -84,7 +87,7 @@ Ordered by what the submission checklist in the Build Spec §6 actually scores. 
 3. **Security pass against Build Spec §4 rules 1–15**, written up as the README security section so a judge scoring contract quality sees the reasoning. Rules 1–6, 8, 10–11, 13–14 are already reflected in `GrantEscrow.sol` and its tests; the split-during-escrow test that rule 6 demands explicitly exists. Rules 7, 9, 12, 15 need a documented position rather than an assumption — see below.
 4. **README**: plain-language concept (reuse the landing copy), security section, out-of-scope statement, the Robinhood Chain reserved-slot note, and the USDG integration note.
 5. **Demo video** showing the full loop.
-6. **Design review of the redesign in a browser.** Static inspection and a green build are not visual validation. The §15.7 polish pass did a *static* audit of motion, contrast, small-screen behaviour and keyboard order, and fixed what it found, but **no browser has rendered this build at 320/390/768/1440, and the console has not been observed.** That still needs a browser, and the production preview is behind Vercel Deployment Protection, so it needs a session signed in to Vercel.
+6. **Design review of the redesign in a browser.** Static inspection and a green build are not visual validation. The §15.7 polish pass did a *static* audit of motion, contrast, small-screen behaviour and keyboard order, and fixed what it found, but **no browser has rendered this build at 320/390/768/1440, and the console has not been observed.** Since the merge in Step 15, `https://equitywallet-psi.vercel.app` builds from `main` and is publicly reachable, so this can now be done in any browser — preview deployments remain behind Vercel Deployment Protection, but the production URL is not.
 
 ### Build Spec items needing an explicit position before submission
 
