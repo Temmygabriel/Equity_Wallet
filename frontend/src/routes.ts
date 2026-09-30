@@ -1,6 +1,4 @@
-/* "/__cert" is a temporary verification route (spec checkpoint 2) and is
-   removed before the final commit. */
-export const routes = ["/", "/employer/fund", "/employer/grants", "/contractor/grant", "/__cert"] as const;
+export const routes = ["/", "/employer/fund", "/employer/grants", "/contractor/grant"] as const;
 
 export type Route = (typeof routes)[number];
 

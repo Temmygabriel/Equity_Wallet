@@ -5,7 +5,6 @@ import { Header } from "./components/Header";
 import { JurisdictionGate } from "./components/JurisdictionGate";
 import { useAccount } from "./hooks/useAccount";
 import { useJurisdiction } from "./hooks/useJurisdiction";
-import { CertGallery } from "./pages/CertGallery";
 import { ContractorGrant } from "./pages/ContractorGrant";
 import { EmployerFund } from "./pages/EmployerFund";
 import { EmployerGrants } from "./pages/EmployerGrants";
@@ -84,10 +83,8 @@ export function App() {
           <main className="surface-blank" />
         ) : location.route === "/employer/fund" ? (
           <EmployerFund navigate={navigate} />
-        ) : location.route === "/employer/grants" ? (
-          <EmployerGrants navigate={navigate} />
         ) : (
-          <CertGallery />
+          <EmployerGrants navigate={navigate} />
         )}
         <Footer gated={gated} />
       </>

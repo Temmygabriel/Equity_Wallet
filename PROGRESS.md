@@ -2,7 +2,7 @@
 
 ## Current state
 
-The repository contains the project scaffold, MVP `GrantEscrow` core contract/test suite, viem-connected Robinhood Chain testnet mock demo, deployment scripts, and CI workflow. No testnet deployment address is committed. CI is green, and all four frontend routes have been recomposed onto the new art direction, both on `feat/editorial-redesign`. Nothing is merged to `main`; the deployed production site still serves `main` at `8ba21f9`.
+The repository contains the project scaffold, MVP `GrantEscrow` core contract/test suite, viem-connected Robinhood Chain testnet mock demo, deployment scripts, and CI workflow. **No testnet deployment address is committed yet** — the deployment is now unblocked and is the next step. CI is green on `feat/editorial-redesign`, and the frontend has been rebuilt end to end on **Direction A "The Desk"** per `EBW_DIRECTION_A_DEEPSEEK_SPEC.md`. Nothing is merged to `main`; the deployed production site still serves `main` at `8ba21f9`.
 
 Target: **Arbitrum Open House Singapore, Online Buildathon** (Robinhood Chain reserved slot). Submissions close **4 Oct 2026**. See `equity-benefit-wallet-build-spec.md` §5 for the day-by-day plan and §6 for the submission checklist — the unchecked items there are the remaining work.
 
@@ -21,14 +21,35 @@ Target: **Arbitrum Open House Singapore, Online Buildathon** (Robinhood Chain re
 
 11. Step 11 employer + contractor recomposition (branch `feat/editorial-redesign`, commit `4e53e51`): both routes had inherited the new tokens but kept the previous layout, so they were composed for their own job. `/employer/fund` now uses a radio grid for the stock choice rather than a dropdown, sets the USDG amount as a Fraunces numeral, and replaces the static review slip with the certificate itself built live from the form and `position: sticky` beside it; `Certificate` gained a `draft` mode so a preview can never read as an issued instrument. `/employer/grants` became a register opened by reference — the contract exposes grants by ID but offers no enumeration, and the page now says so — passing the ID to the contractor view via `?id=`. `/contractor/grant` became certificate-first: the intro block is a thin utility strip, the terms definition list was removed because it restated fields already on the certificate, and the claim panel carries the single state heading. No contract interaction changed and `chainAdapter.ts` was not touched. CI (`validate`) is green on this commit.
 
+12. Step 12 Direction A implementation (branch `feat/editorial-redesign`, commits `4ab268f` → `f195809`): the frontend visual layer was replaced outright against `EBW_DIRECTION_A_DEEPSEEK_SPEC.md`, in the §15 checkpoint order — tokens and certificate, landing, jurisdiction gate, employer fund, contractor view, register, polish. The certificate is the signature object in five states driven by `data-s` with a separate `data-seal` attribute for the stamp; the desk (radial light pool plus feTurbulence grain) carries the landing hero and the contractor page, and everything else is paper. Brass is the only accent, green appears only on the seal and the Unlocked status, red only on errors. Commit-per-checkpoint, CI green on every one.
+
+    Three deliberate token deviations, all recorded in `frontend/src/styles/tokens.css`:
+    - **No `prefers-color-scheme` dark variant.** The light paper / dark desk split *is* the design; auto-inverting `--paper` would destroy it. The spec's own §2 token block lists no dark values, and the mockup's dark block was not ported.
+    - **`--red-desk` added.** §6 asks for `--red-soft` on the desk header, but `#8C3B32` on `--desk #0E1830` measures **2.33:1**, well under WCAG AA. §13 makes contrast the governing rule, so a lightened desk error tone is used instead. This is the one place the spec's colour instruction and its contrast rule conflict, and contrast won.
+    - **`--line-strong` added.** `--line` is a hairline everywhere else, but the three stock-picker card borders *are* the click targets, and a boundary WCAG 1.4.11 asks to identify measured **1.43:1**. `--line-strong` reaches **3.27:1** while staying quieter than the `--ink` edge of the selected card.
+
+13. Step 13 finding: **released and timeout-claimed were previously indistinguishable.** Both paths set the same `RELEASED` status on chain, so `getGrant` could not tell an employer release from a contractor's automatic claim, and the contractor view would have had to guess. `GrantEscrow.sol:38` emits `GrantReleased(uint256 indexed grantId, address indexed contractor, uint256 rawEscrowAmount, bool timeoutClaim)` from the single private `_release`, so the `timeoutClaim` flag resolves it. `getGrant` now reads that event when the grant is unlocked and adds an optional `releasedBy: "employer" | "timeout"` field to `DemoGrant` (§11.4). If the log read is refused it stays `undefined` and the UI falls back to §11.4's unattributed wording rather than guessing.
+
+14. Step 14 deploy unblocking (branch `feat/editorial-redesign`, commit `e2382fe`): deploying needs Hardhat and solc, which this development machine cannot install, so `.github/workflows/deploy-testnet.yml` was added to run the demo deployment on a GitHub runner — `workflow_dispatch` only, because the job spends testnet ETH from a funded key. It fails early with a readable message when `DEPLOYER_PRIVATE_KEY` is absent and never enables shell tracing, which would print the key. The deploy output is `tee`d into the job summary so the five `VITE_*` addresses are readable without opening the raw log. **Required repository secret: `DEPLOYER_PRIVATE_KEY`.** Two accounts were funded with 0.01 testnet ETH each; see the deployment record.
+
+## Deploying: what is and is not needed
+
+The demo path (`deploy-testnet-demo.ts`) is self-contained — it deploys its own `MockUSDG`, mock AAPL/TSLA/NVDA, `MockSwapAdapter` and `GrantEscrow`, then mints 100,000 mock USDG to the deployer. **No official testnet token addresses are needed**, and the `USDG` / `SWAP_ADAPTER` / `AAPL` / `TSLA` / `NVDA` keys in `.env.example` belong to the *other* script, `deploy-grant-escrow.ts`, which is not the demo path. The only external requirement is native testnet ETH for gas.
+
+**No secret belongs in Vercel.** The frontend reads only `VITE_GRANT_ESCROW_ADDRESS`, `VITE_USDG_ADDRESS`, `VITE_AAPL_ADDRESS`, `VITE_TSLA_ADDRESS`, `VITE_NVDA_ADDRESS` and `VITE_RH_RPC_URL` — all public contract addresses, and all produced by the deploy. `DEPLOYER_PRIVATE_KEY` is needed only for the deploy itself, as a GitHub Actions secret.
+
 ## Git baseline
 
 - Current branch: `feat/editorial-redesign`
-- Branch commits: `e0dbc95` (contracts test repair), `4c803bb` (landing rebuilt around the certificate), `4e53e51` (employer + contractor recomposed).
+- Branch commits: `e0dbc95` (contracts test repair), `4c803bb` (landing rebuilt around the certificate), `4e53e51` (employer + contractor recomposed), then the Direction A checkpoints `4ab268f` → `f195809` (certificate, landing, gate, fund, contractor, register, polish) and `e2382fe` (deploy workflow).
 - `main` is at `8ba21f9` (`feat: polish frontend UX and configure Vercel`) and is the deployed Vercel production branch. Production has been confirmed to still serve this build; none of the redesign is in production.
 - `origin/feat/polished-ui-vercel-main` is fully merged into `main`.
 - `origin/codex/inspect-equity-benefit-wallet-project-status-jv0w53` holds an unmerged earlier redesign attempt and is not built on.
 - Starting commit before Step 2: `1e99c8c` (`Initialize repository`)
+
+## Security note
+
+While locating a testnet deployer wallet, a private key was printed into an assistant transcript from `~/Documents/ARC_PROJECT/INSIDE_TERMINL_WALLET.txt`. **The wallet at `0xccE7410Ca13459bDcD65845Da22a77f6A2FefC9e` must be treated as compromised** and must not be funded or reused. That file stores keys in plaintext and contains at least one malformed entry, so it should not be relied on as a key store. `~/.observed-secrets/wallet.json` is a **live celo-mainnet** key (`chainId 42220`) and must not be used for this project under any circumstances.
 
 ## Implemented contract behavior
 
@@ -47,27 +68,33 @@ Target: **Arbitrum Open House Singapore, Online Buildathon** (Robinhood Chain re
 
 ## Deployment record
 
-- GrantEscrow testnet address: not deployed; record only after a demo deployment is verified on the explorer.
+- GrantEscrow testnet address: **not deployed yet.** Record only after a demo deployment is verified on the explorer.
+- Deploy path: `.github/workflows/deploy-testnet.yml`, manual dispatch, requires the `DEPLOYER_PRIVATE_KEY` repository secret.
+- Funded accounts, both confirmed at **0.01 testnet ETH** on chain `46630` (gas is ~0.01 gwei; the deploy is roughly 7 transactions and needs about 0.00012 ETH, so this is ~80× the requirement):
+  - Employer / deployer `0xe5Fe9119000C9E1113dc504891A83Da7bbaa7a7b`, from `RECOURSE/.secrets/deployer.json`
+  - Contractor `0x49B4f09C5894c1C90B0ca9099AF3De0Faf7f3037`, from `RECOURSE/.secrets/relayer.json`
 - 0x route: not configured. 0x supports Robinhood Chain mainnet `4663`, not testnet `46630`.
 
 ## Remaining work
 
 Ordered by what the submission checklist in the Build Spec §6 actually scores. Submissions close **4 Oct 2026**.
 
-1. **Deploy to Robinhood Chain testnet and verify on the explorer.** Nothing is deployed. This is the first unchecked item on the checklist and blocks the end-to-end test, the demo video, and the README's contract address.
+1. **Deploy to Robinhood Chain testnet and verify on the explorer.** Nothing is deployed. This is the first unchecked item on the checklist and blocks the end-to-end test, the demo video, and the README's contract address. **Unblocked**: the deploy workflow exists, both wallets are funded, and the only remaining prerequisite is the `DEPLOYER_PRIVATE_KEY` repository secret.
 2. **End-to-end test with two separate wallets** (Build Spec day 8): fund → release, and fund → timeout claim. Requires (1).
 3. **Security pass against Build Spec §4 rules 1–15**, written up as the README security section so a judge scoring contract quality sees the reasoning. Rules 1–6, 8, 10–11, 13–14 are already reflected in `GrantEscrow.sol` and its tests; the split-during-escrow test that rule 6 demands explicitly exists. Rules 7, 9, 12, 15 need a documented position rather than an assumption — see below.
 4. **README**: plain-language concept (reuse the landing copy), security section, out-of-scope statement, the Robinhood Chain reserved-slot note, and the USDG integration note.
 5. **Demo video** showing the full loop.
-6. **Design review of the redesign on a Vercel preview in a browser.** Static inspection and a green build are not visual validation; this has not been done.
+6. **Design review of the redesign in a browser.** Static inspection and a green build are not visual validation. The §15.7 polish pass did a *static* audit of motion, contrast, small-screen behaviour and keyboard order, and fixed what it found, but **no browser has rendered this build at 320/390/768/1440, and the console has not been observed.** That still needs a browser, and the production preview is behind Vercel Deployment Protection, so it needs a session signed in to Vercel.
 
 ### Build Spec items needing an explicit position before submission
 
 - **Rule 9 (0x swap).** §3 states the swap goes through the 0x Swap API, "confirmed live on Robinhood Chain". 0x supports Robinhood Chain mainnet (`4663`) but not testnet (`46630`), so the project uses `MockSwapAdapter` on testnet instead. This is a real deviation from the spec and must be stated plainly in the submission rather than presented as 0x integration.
-- **Rule 15 (jurisdiction gate).** The spec requires a frontend demo-only jurisdiction gate that is openly labelled as not a real compliance control. **No such gate exists in the frontend.** Either add it as an explicitly-labelled demo stub, or state in the submission that it was not built.
+- **Rule 15 (jurisdiction gate).** **Built** (Step 12), in `frontend/src/components/JurisdictionGate.tsx` plus `config/jurisdiction.ts` and `hooks/useJurisdiction.ts`. It blocks the three gated routes until a region is chosen, is a `role="dialog"` with a focus trap, and is deliberately not dismissible (no close button, Esc does nothing). It carries the required verbatim demo-only label in every state: "Demo-only check. This is a placeholder on the frontend, not a real compliance control. It verifies nothing." The footer repeats that the check is demo-only on gated routes, and the README has a section saying the same. The region list is an **illustrative placeholder**, not a compliance list, and one region (United States) is deliberately blocked so the blocked state is reachable; the project owner must replace the list or remove the gate before any real use.
 - **Rule 7 (`tokenSelectionLocked`).** The contract has no such flag; it achieves the same guarantee structurally, because no function can mutate a funded grant's `selectedToken`. Confirm that framing is acceptable and document it.
 - **Rule 12 (`Math.mulDiv`).** The escrow performs no fixed-point conversion — the adapter owns conversion — so `mulDiv` may not apply. Document the rounding position rather than claiming a rule is satisfied that has no corresponding code.
 
 ## Next recommended implementation step
 
-Deploy the mock demo to Robinhood Chain testnet with `npm run deploy:demo:testnet` from a funded wallet, record the printed addresses, set them as Vercel environment variables, and run the two-wallet end-to-end flow. Everything still outstanding on the checklist depends on that deployment. Do not add a 0x testnet route and do not treat mock assets as real securities.
+Add `DEPLOYER_PRIVATE_KEY` as a repository secret, run the **Deploy testnet demo** workflow from `main`, record the printed addresses, set the five `VITE_*` values in Vercel, then run the two-wallet end-to-end flow. Everything still outstanding on the checklist depends on that deployment. Do not add a 0x testnet route and do not treat mock assets as real securities.
+
+The temporary `/__cert` verification route and its `CertGallery` page were removed before this merge; the route list is now exactly the four product routes.

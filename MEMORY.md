@@ -40,6 +40,10 @@ The product represents a contractor benefit grant, with an employer-side issuanc
 - Never commit private keys, RPC credentials, or other secrets; use `.env` locally and retain `.env.example` as a key-only template.
 - Contract security review and comprehensive tests must precede any real deployment.
 - Do not expose or imply that a placeholder frontend is a usable wallet or custody solution.
+- **The wallet `0xccE7410Ca13459bDcD65845Da22a77f6A2FefC9e` is compromised.** Its private key was printed in full into an assistant transcript while locating a testnet deployer. Never fund it, never deploy with it, never reuse it. The key came from `~/Documents/ARC_PROJECT/INSIDE_TERMINL_WALLET.txt`, which stores keys in plaintext and contains at least one malformed entry, so it is not a trustworthy key store.
+- `~/.observed-secrets/wallet.json` holds a **live celo-mainnet** key (`chainId 42220`). It must never be used for this project.
+- When masking keys in shell output, match whole lines by `/private\s*key|secret|mnemonic|seed/i` and any 32+ hex run **without** word boundaries — a trailing-word-boundary regex (`\b0x[a-fA-F0-9]{64}\b`) can be defeated by an adjacent character and leak the key.
+- Never enable shell tracing (`set -x`) in the deploy workflow; it would print the deployer key into the job log.
 
 ## Implemented contract architecture and invariants
 
@@ -51,19 +55,26 @@ The product represents a contractor benefit grant, with an employer-side issuanc
 - Both payout paths are non-reentrant, transition to `RELEASED` before the token transfer, and always pay the stored contractor.
 - Focused static review in Step 5 found no objective issue requiring a contract change: state transitions, access checks, exact raw payout, allowance reset, and payout reentrancy protection match the current MVP requirements.
 - The trusted swap adapter remains the only swap boundary. 0x supports Robinhood Chain mainnet (`4663`) but not testnet (`46630`), so no 0x testnet route is configured.
+- **Both payout paths end in the same on-chain `RELEASED` status**, so status alone cannot tell an employer release from a contractor's timeout claim. `GrantEscrow.sol` emits `GrantReleased(grantId, contractor, rawEscrowAmount, timeoutClaim)` from the single private `_release`, so `getGrant` reads that event for an unlocked grant and adds an optional `releasedBy: "employer" | "timeout"` to `DemoGrant` (§11.4). If the log read is refused the field stays `undefined` and the UI uses unattributed wording rather than guessing.
 
 ## UI/design constraints
 
-- The frontend has four Vite routes: landing, employer funding, employer grants, and contractor grant.
-- The visual system uses Fraunces and Inter with paper, ink, and brass colors; square bordered surfaces; 3px button corners; no gradients, shadows, or generic SaaS-card treatment.
-- The certificate component must retain the `cert → cert-inner → cert-core` composition, a wax-seal state badge, left-aligned landing hero copy, a centered certificate, visible focus states, and reduced-motion support.
-- Certificate states are `LOCKED`, `UNLOCKED`, and `CLAIMED`; green is reserved for the unlocked badge.
-- The frontend uses viem through `chainAdapter.ts` for EIP-1193 wallet connection and real testnet reads/writes. It is configured only from deployment-produced `VITE_*` addresses and must display that mock assets are not real securities.
-- Tokens follow the Design Spec's cool values (`--paper #FAFAF7`, `--ink #16233D`, `--brass #8A6A34`), not warm cream. Type uses only Fraunces 400/500 and Inter 400/500. Letter-spaced all-caps eyebrow labels and middle-dot meta strings are prohibited by the Design Spec and must not be reintroduced.
-- Certificate seal sits on the certificate's outer edge (`−14px` offsets, `−8deg`) and renders **only** when the grant is no longer held; a held grant shows a quiet "Held until [date]" line instead. The certificate carries a generated guilloché underprint as its security-print motif.
-- The `UNLOCKED` certificate state is not reachable from chain data: `GrantEscrow.Status` is `CREATED | FUNDED | RELEASED`, so `chainAdapter` maps `1 → LOCKED` and `2 → CLAIMED`. `UNLOCKED` currently appears only on the landing specimen certificate.
+The frontend was rebuilt on **Direction A "The Desk"** (`EBW_DIRECTION_A_DEEPSEEK_SPEC.md`). The notes below describe the current system; anything that contradicts them is stale.
+
+- The frontend has exactly four routes: `/` (landing), `/employer/fund`, `/employer/grants`, `/contractor/grant`. A temporary `/__cert` verification route existed during the build and has been removed; do not reintroduce it.
+- **Two surfaces.** The *desk* (navy, radial light pool, feTurbulence grain) carries the landing hero and the contractor page. Everything else is *paper*. Brass is the only accent; green appears only on the seal and the Unlocked status; red only on errors.
+- **The certificate is the signature object.** Landscape `aspect-ratio: 1.42`, `max-width: 640px` (720px on the contractor view), never rotated. Five states driven by `data-s` (`draft | held | released | claimed | unloaded`), with a *separate* `data-seal="on|off"` attribute driving the stamp, because the seal is transition-driven rather than a keyframe so that removing it animates back out.
+- The certificate's physical shadow and the seal are the only two shadows in the product. Gradients are permitted only on the desk light pool and the certificate's band pattern.
+- Type is Fraunces and Inter at weights 400/500 only. Prohibited and **must not be reintroduced**: letter-spaced all-caps eyebrows/kickers, middle-dot meta strings, decorative icons beyond the six in `components/icons.tsx`, padlocks, arrows on buttons, numbered lists outside the funding-progress list and the landing timeline, tickers on any certificate face, and more than one primary action per screen.
+- **No disabled buttons**: an unavailable action is either absent with explanatory text beside it, or present with `aria-disabled` and an inert handler. Hover is `opacity: .85` and nothing else.
+- The six icons live only in `components/icons.tsx` (20x20 viewBox, `fill="none"`, `stroke="currentColor"`, `stroke-width={1.5}`, square caps, mitre joins, `aria-hidden`). `components/Rosette.tsx` holds the seal's generated guilloché rosette, which is a graphic mark rather than an icon, and strokes `currentColor`.
+- Three deliberate token deviations, documented in `styles/tokens.css`: **no `prefers-color-scheme` dark variant** (the paper/desk split *is* the design); **`--red-desk`** (spec §6 asks for `--red-soft` on the desk, but `#8C3B32` on `--desk` measures 2.33:1, and §13 makes contrast governing); **`--line-strong`** (the stock-picker card borders are the click targets, and `--line` measured 1.43:1 against WCAG 1.4.11's 3:1).
+- Below 560px the certificate drops its fixed `aspect-ratio` and becomes content-sized rather than clipping its own text. It stays landscape in practice. The reference `No. 0042` wraps to a second line below 480px rather than being hidden.
+- The `UNLOCKED` status is still not reachable from chain data: `GrantEscrow.Status` is `CREATED | FUNDED | RELEASED`, so `chainAdapter` maps `1 → LOCKED` and `2 → CLAIMED`. In Direction A the certificate surfaces these as the `held` and `released`/`claimed` states.
 - **The milestone description is not stored on-chain.** The `Grant` struct has no milestone field and `fundGrant` does not accept one. The frontend keeps the description in browser `localStorage` against the grant reference and labels it honestly where it is unavailable. Adding an on-chain milestone field would be a contract change and needs explicit approval.
-- `DemoGrant` exposes `deadlineTimestamp` (unix seconds) so the UI can tell whether the timeout claim is available. `releaseGrant` is employer-only and pre-deadline; `claimAfterTimeout` is contractor-only and at/after the deadline, so exactly one action is ever valid.
+- **Amounts follow one rule, in `frontend/src/local.ts`.** The contract stores the stock quantity, not the USDG amount, so a dollar figure is shown *only* where this browser recorded the USDG amount at funding time (`ebw.usdg.<id>`). Everywhere else the figure is the token quantity with no dollar sign. A dollar figure is never invented. The fund page, the contractor certificate and the register all call one function so the rule cannot drift.
+- `DemoGrant` exposes `deadlineTimestamp` (unix seconds) so the UI can tell whether the timeout claim is available, `employerAddress`/`contractorAddress` so it can derive the viewer's role, and `releasedBy: "employer" | "timeout"` so it can tell the two payout paths apart. `releaseGrant` is employer-only and pre-deadline; `claimAfterTimeout` is contractor-only and at/after the deadline, so exactly one action is ever valid.
+- **The jurisdiction gate** (`components/JurisdictionGate.tsx`) is built and wraps the three gated routes. It is a `role="dialog"` with a focus trap, deliberately not dismissible (no close button, Esc does nothing), and carries the required verbatim demo-only label in every state. Its region list is an **illustrative placeholder, not a compliance list**, and the project owner must replace it or remove the gate before any real use.
 
 ## Explicitly out of scope for this scaffold
 
@@ -76,17 +87,32 @@ The product represents a contractor benefit grant, with an employer-side issuanc
 
 npm workspaces; Hardhat, Solidity `0.8.24`, and TypeScript for contracts; React, TypeScript, and Vite for the frontend.
 
+**This development machine cannot build the project.** It has 8 GB of RAM and no usable `node_modules`; `node_modules` and `package-lock.json` were deliberately deleted and must not be reinstalled locally. Do not run `npm install` on this machine. Validate and deploy through GitHub Actions (`ci.yml` for validation, `deploy-testnet.yml` for the deploy); Vercel builds the frontend. CI status is read via the GitHub API — the `gh` CLI is **not** installed.
+
 ## Testnet mock demo
 
 - `deploy:demo:testnet` checks chain ID `46630`, deploys MockUSDG, mock AAPL/TSLA/NVDA, MockSwapAdapter, and GrantEscrow, and mints initial mock USDG to the deployer.
 - The mock adapter is deterministic: its default rate is 1:1 at 18 decimals and it enforces `minStockOut`. The existing fixed-output mode is retained solely for unit tests.
-- The demo contract addresses are never committed; copy the script output into `frontend/.env.local` after deployment.
+- The demo contract addresses are never committed; copy the script output into the frontend's environment values after deployment.
+- `.github/workflows/deploy-testnet.yml` runs that deploy on a GitHub runner, by **manual dispatch only** (it spends testnet ETH from a funded key, so it never runs on push or PR). It fails early with a readable message when `DEPLOYER_PRIVATE_KEY` is absent, and appends the deploy output to the job summary so the five `VITE_*` addresses are readable without opening the raw log. **Required repository secret: `DEPLOYER_PRIVATE_KEY`.**
+- `workflow_dispatch` workflows are listed in the Actions UI only once the file is present on the **default branch**. This is why the deploy workflow has to reach `main` before it can be dispatched.
+- Because the demo deploys its own mock tokens, **no official testnet token addresses are needed** and only native testnet ETH for gas is required. The `USDG` / `SWAP_ADAPTER` / `AAPL` / `TSLA` / `NVDA` keys in `.env.example` belong to the separate `deploy-grant-escrow.ts` path, not the demo.
+- **No secret belongs in Vercel.** The frontend reads only public `VITE_*` contract addresses and `VITE_RH_RPC_URL`.
+
+## Deployment record
+
+- **GrantEscrow testnet address: not deployed yet.** Record it only after a demo deployment is confirmed on the explorer.
+- Two testnet accounts are funded on chain `46630`, **0.01 ETH each**. Gas is ~0.01 gwei and the deploy is roughly 7 transactions needing about 0.00012 ETH, so this is ~80× the requirement:
+  - Employer / deployer `0xe5Fe9119000C9E1113dc504891A83Da7bbaa7a7b` (`RECOURSE/.secrets/deployer.json`)
+  - Contractor `0x49B4f09C5894c1C90B0ca9099AF3De0Faf7f3037` (`RECOURSE/.secrets/relayer.json`)
+- **Not** `0xccE7410Ca13459bDcD65845Da22a77f6A2FefC9e` — that wallet is compromised, see Security constraints.
 
 ## Build Spec items that need a stated position, not an assumption
 
 These are places where the Build Spec and the implemented reality diverge. Each needs to be written down plainly in the submission rather than glossed over.
 
 - **Rule 9 (0x swap).** §3 says the swap runs through the 0x Swap API, "confirmed live on Robinhood Chain". 0x covers Robinhood Chain mainnet (`4663`) but not testnet (`46630`), so testnet uses `MockSwapAdapter`. Never describe this as 0x integration.
-- **Rule 15 (jurisdiction gate).** The spec requires an openly-labelled demo-only jurisdiction gate on the frontend. **It does not exist in the frontend.** Either build it as an explicitly-labelled stub or state that it was not built.
+- **Rule 15 (jurisdiction gate).** **Built** (Step 12), in `frontend/src/components/JurisdictionGate.tsx` plus `config/jurisdiction.ts` and `hooks/useJurisdiction.ts`. It blocks the three gated routes until a region is chosen, is a `role="dialog"` with a focus trap, and is deliberately not dismissible (no close button, Esc does nothing). It carries the required verbatim demo-only label in every state: "Demo-only check. This is a placeholder on the frontend, not a real compliance control. It verifies nothing." The region list is an **illustrative placeholder**, not a compliance list, and one region (United States) is deliberately blocked so the blocked state is reachable; the project owner must replace the list or remove the gate before any real use.
+- **Rule 11.4 (release attribution).** Resolved in code — see `releasedBy` above. Both payout paths set the same `RELEASED` status, so the `GrantReleased` event's `timeoutClaim` flag is the only way to distinguish them.
 - **Rule 7 (`tokenSelectionLocked`).** There is no such flag. The same guarantee holds structurally — no function can mutate a funded grant's `selectedToken` — so describe the guarantee, not the flag.
 - **Rule 12 (`Math.mulDiv`).** The escrow does no fixed-point conversion, because the adapter owns conversion. `mulDiv` may have no corresponding code; document the rounding position instead of claiming compliance.
