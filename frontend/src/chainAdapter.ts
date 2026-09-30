@@ -46,7 +46,7 @@ declare global { interface Window { ethereum?: EIP1193Provider } }
 
 function requiredAddress(name: string): Address {
   const value = import.meta.env[name] as string | undefined;
-  if (!value || !/^0x[a-fA-F0-9]{40}$/.test(value)) throw new Error(`Missing or invalid ${name}. Deploy demo contracts and configure frontend/.env.local.`);
+  if (!value || !/^0x[a-fA-F0-9]{40}$/.test(value)) throw new Error(`Missing or invalid ${name}. Deploy the demo contracts, then set it in the deployment environment (Vercel) or in frontend/.env.local.`);
   return value as Address;
 }
 

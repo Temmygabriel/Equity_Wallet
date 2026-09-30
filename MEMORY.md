@@ -101,11 +101,12 @@ npm workspaces; Hardhat, Solidity `0.8.24`, and TypeScript for contracts; React,
 
 ## Deployment record
 
-- **GrantEscrow testnet address: not deployed yet.** Record it only after a demo deployment is confirmed on the explorer.
-- Two testnet accounts are funded on chain `46630`, **0.01 ETH each**. Gas is ~0.01 gwei and the deploy is roughly 7 transactions needing about 0.00012 ETH, so this is ~80× the requirement:
-  - Employer / deployer `0xe5Fe9119000C9E1113dc504891A83Da7bbaa7a7b` (`RECOURSE/.secrets/deployer.json`)
-  - Contractor `0x49B4f09C5894c1C90B0ca9099AF3De0Faf7f3037` (`RECOURSE/.secrets/relayer.json`)
-- **Not** `0xccE7410Ca13459bDcD65845Da22a77f6A2FefC9e` — that wallet is compromised, see Security constraints.
+**The demo contracts are deployed** (2026-09-30, run `36737126586`) and confirmed on the explorer — `GrantEscrow` is `is_contract: true` with `creation_status: "success"`. Full addresses, the creation tx and the funded accounts are in `PROGRESS.md`'s deployment record; do not duplicate the table here.
+
+- `is_verified: false` — **source verification is still outstanding**, and Build Spec §6 asks for explorer-verified contracts.
+- The frontend reads its config via a **dynamic** `import.meta.env[name]` in `requiredAddress()`. That was verified against the built bundle, not assumed: Vite compiles `import.meta.env` to a real object literal, so a var set in Vercel at build time is reachable by dynamic key. Setting the five `VITE_*` values in Vercel and redeploying is what wires the frontend up; until then the deployed site throws on the gated routes.
+- **A stale asset hash returns the SPA shell with HTTP 200**, not a 404. Fetching an old `/assets/index-*.js` and grepping it silently inspects `index.html` and proves nothing. Always re-read the current asset path from the live HTML first, and check the fetched file actually looks like JS.
+- 0x route: not configured. 0x supports Robinhood Chain mainnet `4663`, not testnet `46630`.
 
 ## Build Spec items that need a stated position, not an assumption
 

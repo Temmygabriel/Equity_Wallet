@@ -73,23 +73,51 @@ While locating a testnet deployer wallet, a private key was printed into an assi
 
 ## Deployment record
 
-- GrantEscrow testnet address: **not deployed yet.** Record only after a demo deployment is verified on the explorer.
-- Deploy path: `.github/workflows/deploy-testnet.yml`, manual dispatch, requires the `DEPLOYER_PRIVATE_KEY` repository secret.
-- Funded accounts, both confirmed at **0.01 testnet ETH** on chain `46630` (gas is ~0.01 gwei; the deploy is roughly 7 transactions and needs about 0.00012 ETH, so this is ~80× the requirement):
-  - Employer / deployer `0xe5Fe9119000C9E1113dc504891A83Da7bbaa7a7b`, from `RECOURSE/.secrets/deployer.json`
-  - Contractor `0x49B4f09C5894c1C90B0ca9099AF3De0Faf7f3037`, from `RECOURSE/.secrets/relayer.json`
+**Deployed 2026-09-30** by dispatching `deploy-testnet.yml` on `main` (run `36737126586`, conclusion `success`). Verified against the Robinhood Chain explorer, not just the job log: `GrantEscrow` reports `is_contract: true` and `creation_status: "success"`, and its creator is the funded deployer.
+
+| Contract | Address |
+|---|---|
+| GrantEscrow | `0xa323e031a9C8107a993a572Af23448696523e6aA` |
+| MockUSDG | `0x32288128Ff07Fc9e443161c1F336b784508a056A` |
+| Mock AAPL | `0xEf3383aBfAB7d12e2EB063438eeDAc30Cf4CA907` |
+| Mock TSLA | `0x9A7502Ea690107B22AC414982A187eb02648939A` |
+| Mock NVDA | `0x4Bd04EFe854Cdf2535CD006a3dEc448994FDFa27` |
+
+- GrantEscrow creation tx: `0x7a973a1db093e31ed7723c062601de3b83bcab378256b13e70aa3384c1c7a805`
+- Deployer `0xe5Fe9119000C9E1113dc504891A83Da7bbaa7a7b` went from `0.01` to `0.00996057` testnet ETH, so the deploy cost about **0.0000394 ETH** — roughly a third of the earlier 0.00012 estimate. The contractor account `0x49B4f09C5894c1C90B0ca9099AF3De0Faf7f3037` was not touched by the deploy.
+- **Source verification is outstanding**: the explorer reports `is_verified: false` for these contracts. Build Spec §6 requires explorer-verified contracts, so this is still an open item.
+- These are **mock** assets deployed by the demo script. They are not real securities and not the official USDG.
+- The addresses are public configuration, not secrets. They belong in Vercel's environment variables, never in source control.
+
+### Frontend configuration
+
+The frontend reads its configuration through `import.meta.env[name]` inside `requiredAddress()` in `frontend/src/chainAdapter.ts`. That dynamic lookup was checked against the built bundle rather than assumed: Vite compiles `import.meta.env` into a real object literal (`...VITE_VERCEL_ENV:"production",...`), so a var set in Vercel at build time **is** reachable by dynamic key. Set these five in the Vercel project and redeploy:
+
+```
+VITE_GRANT_ESCROW_ADDRESS=0xa323e031a9C8107a993a572Af23448696523e6aA
+VITE_USDG_ADDRESS=0x32288128Ff07Fc9e443161c1F336b784508a056A
+VITE_AAPL_ADDRESS=0xEf3383aBfAB7d12e2EB063438eeDAc30Cf4CA907
+VITE_TSLA_ADDRESS=0x9A7502Ea690107B22AC414982A187eb02648939A
+VITE_NVDA_ADDRESS=0x4Bd04EFe854Cdf2535CD006a3dEc448994FDFa27
+```
+
+`VITE_RH_RPC_URL` defaults to the public testnet RPC in `chainAdapter.ts` and does not need to be set.
+
+Until those are set, the deployed site throws `Missing or invalid VITE_GRANT_ESCROW_ADDRESS` on the employer and contractor routes. That message previously pointed only at `frontend/.env.local`, which is the wrong instruction for a deployed build; it now names the deployment environment too.
+
 - 0x route: not configured. 0x supports Robinhood Chain mainnet `4663`, not testnet `46630`.
 
 ## Remaining work
 
 Ordered by what the submission checklist in the Build Spec §6 actually scores. Submissions close **4 Oct 2026**.
 
-1. **Deploy to Robinhood Chain testnet and verify on the explorer.** Nothing is deployed. This is the first unchecked item on the checklist and blocks the end-to-end test, the demo video, and the README's contract address. **Unblocked**: the deploy workflow exists, both wallets are funded, and the only remaining prerequisite is the `DEPLOYER_PRIVATE_KEY` repository secret.
-2. **End-to-end test with two separate wallets** (Build Spec day 8): fund → release, and fund → timeout claim. Requires (1).
-3. **Security pass against Build Spec §4 rules 1–15**, written up as the README security section so a judge scoring contract quality sees the reasoning. Rules 1–6, 8, 10–11, 13–14 are already reflected in `GrantEscrow.sol` and its tests; the split-during-escrow test that rule 6 demands explicitly exists. Rules 7, 9, 12, 15 need a documented position rather than an assumption — see below.
-4. **README**: plain-language concept (reuse the landing copy), security section, out-of-scope statement, the Robinhood Chain reserved-slot note, and the USDG integration note.
-5. **Demo video** showing the full loop.
-6. **Design review of the redesign in a browser.** Static inspection and a green build are not visual validation. The §15.7 polish pass did a *static* audit of motion, contrast, small-screen behaviour and keyboard order, and fixed what it found, but **no browser has rendered this build at 320/390/768/1440, and the console has not been observed.** Since the merge in Step 15, `https://equitywallet-psi.vercel.app` builds from `main` and is publicly reachable, so this can now be done in any browser — preview deployments remain behind Vercel Deployment Protection, but the production URL is not.
+1. **Verify the deployed contracts on the explorer.** The contracts are deployed (see the deployment record) but the explorer reports `is_verified: false`, and Build Spec §6 asks for explorer-verified contracts. This needs a Hardhat verify run against chain `46630` with the constructor arguments the demo script used. Nothing else on the checklist is blocked by it, but it is an unchecked item.
+2. **Set the five `VITE_*` addresses in Vercel and redeploy**, then confirm the live site reads them. Until that happens the deployed frontend throws on the gated routes. The values are in the deployment record.
+3. **End-to-end test with two separate wallets** (Build Spec day 8): fund → release, and fund → timeout claim. The employer/deployer and contractor accounts are both funded.
+4. **Security pass against Build Spec §4 rules 1–15**, written up as the README security section so a judge scoring contract quality sees the reasoning. Rules 1–6, 8, 10–11, 13–14 are already reflected in `GrantEscrow.sol` and its tests; the split-during-escrow test that rule 6 demands explicitly exists. Rules 7, 9, 12, 15 need a documented position rather than an assumption — see below.
+5. **README**: plain-language concept (reuse the landing copy), security section, out-of-scope statement, the Robinhood Chain reserved-slot note, and the USDG integration note. It can now cite the deployed GrantEscrow address from the deployment record.
+6. **Demo video** showing the full loop.
+7. **Design review of the redesign in a browser.** Static inspection and a green build are not visual validation. The §15.7 polish pass did a *static* audit of motion, contrast, small-screen behaviour and keyboard order, and fixed what it found, but **no browser has rendered this build at 320/390/768/1440, and the console has not been observed.** Since the merge in Step 15, `https://equitywallet-psi.vercel.app` builds from `main` and is publicly reachable, so this can now be done in any browser — preview deployments remain behind Vercel Deployment Protection, but the production URL is not.
 
 ### Build Spec items needing an explicit position before submission
 
@@ -100,6 +128,8 @@ Ordered by what the submission checklist in the Build Spec §6 actually scores. 
 
 ## Next recommended implementation step
 
-Add `DEPLOYER_PRIVATE_KEY` as a repository secret, run the **Deploy testnet demo** workflow from `main`, record the printed addresses, set the five `VITE_*` values in Vercel, then run the two-wallet end-to-end flow. Everything still outstanding on the checklist depends on that deployment. Do not add a 0x testnet route and do not treat mock assets as real securities.
+The deploy is done. The immediate next step is to **set the five `VITE_*` addresses in Vercel and redeploy**, then open the employer route and confirm the frontend reads them rather than throwing — until that happens the deployed site is not usable. After that, run the two-wallet end-to-end flow (fund → release, and fund → timeout claim), which is Build Spec day 8 and the last thing standing between here and the README and demo video.
 
-The temporary `/__cert` verification route and its `CertGallery` page were removed before this merge; the route list is now exactly the four product routes.
+Do not add a 0x testnet route and do not treat mock assets as real securities.
+
+The temporary `/__cert` verification route and its `CertGallery` page were removed before the merge; the route list is now exactly the four product routes.
