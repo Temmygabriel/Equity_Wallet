@@ -14,7 +14,7 @@ export function Header({ surface, navigate, account }: HeaderProps) {
 
   return (
     <>
-      <header className="site-header">
+      <header className={`site-header ${surface === "desk" ? "on-desk" : "on-paper"}`}>
         <button className="wordmark" onClick={() => navigate("/")}>
           Equity <em>Benefit Wallet</em>
         </button>

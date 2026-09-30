@@ -28,6 +28,39 @@
   z-index: 1;
 }
 
+/* --- Entrances (spec §5.1) ----------------------------------------------- */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes certIn {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* --- Header -------------------------------------------------------------- */
 
 .site-header {
@@ -40,11 +73,12 @@
   padding: 26px var(--gutter);
 }
 
-[data-surface="desk"] .site-header {
+.site-header.on-desk {
   background: transparent;
+  animation: fadeIn 0.3s var(--ease-out) both;
 }
 
-[data-surface="paper"] .site-header {
+.site-header.on-paper {
   background: var(--paper);
   border-bottom: 1px solid var(--line);
 }
@@ -60,11 +94,11 @@
   color: var(--brass);
 }
 
-[data-surface="desk"] .wordmark {
+.on-desk .wordmark {
   color: var(--on-desk);
 }
 
-[data-surface="desk"] .wordmark em {
+.on-desk .wordmark em {
   color: var(--brass-hi);
 }
 
@@ -74,11 +108,11 @@
   font-size: 13px;
 }
 
-[data-surface="desk"] .site-header nav {
+.on-desk nav {
   color: var(--on-desk-soft);
 }
 
-[data-surface="paper"] .site-header nav {
+.on-paper nav {
   color: var(--ink-soft);
 }
 
@@ -97,12 +131,12 @@
   min-height: 40px;
 }
 
-[data-surface="desk"] .wallet-button {
+.on-desk .wallet-button {
   border: 1px solid rgba(241, 239, 231, 0.4);
   color: var(--on-desk);
 }
 
-[data-surface="paper"] .wallet-button {
+.on-paper .wallet-button {
   background: var(--ink);
   color: var(--paper);
 }
@@ -111,17 +145,16 @@
   opacity: 0.85;
 }
 
-.wallet-button.is-wrong {
+.on-desk .wallet-button.is-wrong {
   color: var(--red-desk);
 }
 
-[data-surface="paper"] .wallet-button.is-wrong {
-  color: var(--red-soft);
-}
-
-[data-surface="paper"] .wallet-button.is-wrong {
+/* On paper the wrong-chain state gives up the ink fill and becomes an outline,
+   so the red never has to sit on a dark chip. */
+.on-paper .wallet-button.is-wrong {
   background: transparent;
   border: 1px solid var(--line);
+  color: var(--red-soft);
 }
 
 .wallet-dot {
@@ -141,8 +174,16 @@
   gap: 10px;
   margin: 0 var(--gutter);
   padding: 12px 14px;
-  border: 1px solid var(--line);
   font-size: 13px;
+}
+
+.on-desk .wallet-error {
+  border: 1px solid rgba(241, 239, 231, 0.25);
+  color: var(--on-desk-soft);
+}
+
+.on-paper .wallet-error {
+  border: 1px solid var(--line);
   color: var(--ink-soft);
   background: var(--paper);
 }
@@ -153,6 +194,10 @@
   color: var(--red-soft);
 }
 
+.on-desk .wallet-error .icon {
+  color: var(--red-desk);
+}
+
 .wallet-error button {
   margin-left: auto;
   flex: none;
@@ -161,6 +206,131 @@
 
 .wallet-error button:hover {
   opacity: 0.85;
+}
+
+/* --- Hero (spec §7.1) ---------------------------------------------------- */
+
+.hero {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: clamp(24px, 4vw, 64px);
+  align-items: center;
+  padding: 0 var(--gutter) 56px;
+}
+
+.hero h1 {
+  font-size: clamp(40px, 5.6vw, 76px);
+  line-height: 1.04;
+  letter-spacing: -0.03em;
+}
+
+.hero h1 .line {
+  display: block;
+}
+
+.hero h1 em {
+  color: var(--brass-hi);
+  font-style: italic;
+}
+
+.hero h1 .l1 {
+  animation: riseIn 0.6s var(--ease-out) 0.08s both;
+}
+
+.hero h1 .l2 {
+  animation: riseIn 0.6s var(--ease-out) 0.16s both;
+}
+
+.hero h1 .l3 {
+  animation: riseIn 0.6s var(--ease-out) 0.24s both;
+}
+
+.lede {
+  margin-top: 26px;
+  max-width: 40ch;
+  color: var(--on-desk-soft);
+  font-size: 17px;
+  animation: riseIn 0.6s var(--ease-out) 0.35s both;
+}
+
+.cta {
+  margin-top: 34px;
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  flex-wrap: wrap;
+  animation: riseIn 0.6s var(--ease-out) 0.5s both;
+}
+
+.stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+}
+
+.stage .cert {
+  animation: certIn 0.9s var(--ease-out) 0.2s both;
+}
+
+.specimen-cap {
+  font-size: 12px;
+  color: var(--on-desk-mute);
+  margin-top: -8px;
+}
+
+/* The switcher is a segmented control, not a row of separate buttons. */
+.states {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid rgba(241, 239, 231, 0.25);
+  border-radius: var(--radius);
+  animation: fadeIn 0.4s var(--ease-out) 0.7s both;
+}
+
+.states button {
+  position: relative;
+  padding: 8px 14px;
+  font-size: 13px;
+  color: var(--on-desk-soft);
+  border-radius: 2px;
+}
+
+.states button[aria-pressed="true"] {
+  background: var(--on-desk);
+  color: var(--ink);
+  font-weight: 500;
+}
+
+@keyframes drawLine {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* The one-time invitation to click: a 1.2s brass underline drawn at 2.5s, never
+   repeating. It retires as soon as the group is used. */
+.states .hint::after {
+  content: "";
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 3px;
+  height: 1px;
+  background: var(--brass-hi);
+  transform-origin: left;
+  transform: scaleX(0);
+  animation: drawLine 1.2s var(--ease-out) 2.5s both;
+  transition: opacity 0.2s var(--ease-out);
+}
+
+.states[data-touched="true"] .hint::after {
+  opacity: 0;
 }
 
 /* --- Testnet notice ------------------------------------------------------ */
@@ -176,13 +346,24 @@
   max-width: 46ch;
 }
 
+/* --- Responsive ---------------------------------------------------------- */
+
 @media (max-width: 860px) {
+  .hero {
+    grid-template-columns: 1fr;
+    padding-top: 8px;
+  }
+
   .notice-desk {
     position: static;
-    padding: 0 24px 20px;
+    padding: 24px 24px 20px;
   }
 
   .site-header nav {
     display: none;
+  }
+
+  .states button {
+    min-height: 44px;
   }
 }

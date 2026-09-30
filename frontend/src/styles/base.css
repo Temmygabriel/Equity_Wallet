@@ -63,14 +63,15 @@ textarea {
   color: inherit;
 }
 
-/* Visible focus on every interactive element; brass on paper, brass-hi on desk. */
+/* Visible focus on every interactive element. Brass on paper, brass-hi on the
+   desk, where brass would disappear into the navy. */
 :focus-visible {
-  outline: 2px solid var(--brass-hi);
+  outline: 2px solid var(--brass);
   outline-offset: 3px;
 }
 
-[data-surface="paper"] :focus-visible {
-  outline-color: var(--brass);
+.desk :focus-visible {
+  outline-color: var(--brass-hi);
 }
 
 .sr-only {
@@ -118,10 +119,6 @@ textarea {
   font-size: 15px;
   border-bottom: 1px solid var(--brass-hi);
   padding-bottom: 2px;
-}
-
-[data-surface="paper"] .lnk {
-  border-bottom-color: var(--brass);
 }
 
 .lnk:hover,

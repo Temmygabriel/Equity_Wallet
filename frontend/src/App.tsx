@@ -2,8 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { Footer } from "./components/Footer";
 import { Header } from "./components/Header";
 import { useAccount } from "./hooks/useAccount";
-import { ContractorGrant } from "./pages/ContractorGrant";
 import { CertGallery } from "./pages/CertGallery";
+import { ContractorGrant } from "./pages/ContractorGrant";
 import { EmployerFund } from "./pages/EmployerFund";
 import { EmployerGrants } from "./pages/EmployerGrants";
 import { Landing } from "./pages/Landing";
@@ -41,19 +41,20 @@ export function App() {
   const [location, navigate] = useLocation();
   const account = useAccount();
   const surface = surfaceFor(location.route);
-  const gated = GATED_ROUTES.includes(location.route);
+  const header = <Header surface={surface} navigate={navigate} account={account} />;
+
+  /* Desk routes place the header inside their own full-viewport surface. */
+  if (location.route === "/") return <Landing navigate={navigate} header={header} />;
+  if (location.route === "/contractor/grant")
+    return <ContractorGrant header={header} grantId={location.id} account={account} />;
 
   return (
-    <div data-surface={surface}>
-      <Header surface={surface} navigate={navigate} account={account} />
-
-      {location.route === "/" && <Landing navigate={navigate} />}
+    <>
+      {header}
       {location.route === "/employer/fund" && <EmployerFund navigate={navigate} />}
       {location.route === "/employer/grants" && <EmployerGrants navigate={navigate} />}
-      {location.route === "/contractor/grant" && <ContractorGrant grantId={location.id} account={account} />}
       {location.route === "/__cert" && <CertGallery />}
-
-      {surface === "paper" && <Footer gated={gated} />}
-    </div>
+      <Footer gated={GATED_ROUTES.includes(location.route)} />
+    </>
   );
 }
