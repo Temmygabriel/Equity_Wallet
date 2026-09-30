@@ -36,6 +36,8 @@ Target: **Arbitrum Open House Singapore, Online Buildathon** (Robinhood Chain re
 
     Production was then **verified to be serving the redesign**, by fetching the live bundle and stylesheet rather than inferring it from the merge: `/assets/index-Mk3OHyUG.js` and `/assets/index-DkVPWc7A.css` contain the new landing copy, `data-seal`, the jurisdiction gate's demo-only label, and the `--desk` / `--red-desk` / `--cert-seal-ink` / `--line-strong` tokens, while the pre-redesign `cert-core` is absent. `--line-strong` is the decisive marker because it exists only from the §15.7 polish pass onward, so production carries the complete redesign rather than an intermediate checkpoint. This also makes `https://equitywallet-psi.vercel.app` the target for the browser design review in Remaining work item 6, since previews remain behind Deployment Protection.
 
+16. Step 16 rule 9 compliance (commit `a27343f`): auditing `GrantEscrow.sol` against Build Spec §4 line by line found rule 9 only half-implemented. Two of its four requirements were absent. **A zero `minStockOut` was accepted**, which made the existing `rawEscrowAmount >= minStockOut` check vacuous — any output satisfies `>= 0`, so the floor the rule exists to provide did not exist. **The swap carried no transaction deadline**, so `ISwapAdapter.swap` had no bound at all. `fundGrant` now rejects a zero `minStockOut` outright rather than defaulting it, and takes a `swapDeadline` it requires not to be in the past; the interface and `MockSwapAdapter` carry it through so the plumbing is exercised rather than assumed. Three tests were added, and the adapter-level one calls the adapter directly because the escrow's own guard makes the adapter's guard unreachable through `fundGrant` — a test that never reaches the guard would prove nothing. The frontend passes a twenty-minute window from funding time. This changes `fundGrant`'s signature, so the first deployment was superseded and the contracts redeployed (see the deployment record); **the earlier addresses must not be used**.
+
 ## Deploying: what is and is not needed
 
 The demo path (`deploy-testnet-demo.ts`) is self-contained — it deploys its own `MockUSDG`, mock AAPL/TSLA/NVDA, `MockSwapAdapter` and `GrantEscrow`, then mints 100,000 mock USDG to the deployer. **No official testnet token addresses are needed**, and the `USDG` / `SWAP_ADAPTER` / `AAPL` / `TSLA` / `NVDA` keys in `.env.example` belong to the *other* script, `deploy-grant-escrow.ts`, which is not the demo path. The only external requirement is native testnet ETH for gas.
@@ -73,32 +75,33 @@ While locating a testnet deployer wallet, a private key was printed into an assi
 
 ## Deployment record
 
-**Deployed 2026-09-30** by dispatching `deploy-testnet.yml` on `main` (run `36737126586`, conclusion `success`). Verified against the Robinhood Chain explorer, not just the job log: `GrantEscrow` reports `is_contract: true` and `creation_status: "success"`, and its creator is the funded deployer.
+**Deployed 2026-09-30.** First deployment was run `36737126586`; after the rule 9 fix changed `fundGrant`'s signature (Step 16) the contracts were redeployed as run `36741437572`, **which supersedes the first set — do not use the earlier addresses**. Verified against the Robinhood Chain explorer, not just the job log: `GrantEscrow` reports `is_contract: true` and `creation_status: "success"`, and its creator is the funded deployer.
 
 | Contract | Address |
 |---|---|
-| GrantEscrow | `0xa323e031a9C8107a993a572Af23448696523e6aA` |
-| MockUSDG | `0x32288128Ff07Fc9e443161c1F336b784508a056A` |
-| Mock AAPL | `0xEf3383aBfAB7d12e2EB063438eeDAc30Cf4CA907` |
-| Mock TSLA | `0x9A7502Ea690107B22AC414982A187eb02648939A` |
-| Mock NVDA | `0x4Bd04EFe854Cdf2535CD006a3dEc448994FDFa27` |
+| GrantEscrow | `0x339a44f967dD1eD1bDBa98Fb4396DaB77e4D3645` |
+| MockUSDG | `0x308b3d480199ACcD21c8BE882A5E9F3077D0EaAC` |
+| Mock AAPL | `0x17078672b60471957f42A0343d510B1a4e81DC59` |
+| Mock TSLA | `0x6993Ef68e09ec698bb8A607Eb24a28060906b27E` |
+| Mock NVDA | `0x31bACde94bEa0FE3035227053dbf03a4B029a6fC` |
 
-- GrantEscrow creation tx: `0x7a973a1db093e31ed7723c062601de3b83bcab378256b13e70aa3384c1c7a805`
-- Deployer `0xe5Fe9119000C9E1113dc504891A83Da7bbaa7a7b` went from `0.01` to `0.00996057` testnet ETH, so the deploy cost about **0.0000394 ETH** — roughly a third of the earlier 0.00012 estimate. The contractor account `0x49B4f09C5894c1C90B0ca9099AF3De0Faf7f3037` was not touched by the deploy.
-- **Source verification is outstanding**: the explorer reports `is_verified: false` for these contracts. Build Spec §6 requires explorer-verified contracts, so this is still an open item.
+- GrantEscrow creation tx: `0x778227a19d4f0c5890e0c44237b0205ee8caa636f67d1c0e05747769e2c81519`
+- **Superseded first deployment** (do not use): GrantEscrow `0xa323e031a9C8107a993a572Af23448696523e6aA`, from run `36737126586`. It predates the `fundGrant` signature change.
+- Deployer `0xe5Fe9119000C9E1113dc504891A83Da7bbaa7a7b` is at `0.00992096` testnet ETH after both deploys — about `0.000079` ETH spent in total, against `0.01` funded. Roughly 125 deploys remain affordable.
+- **Source verification is outstanding**: the explorer reports `is_verified: false`. Build Spec §6 asks for explorer-verified contracts.
 - These are **mock** assets deployed by the demo script. They are not real securities and not the official USDG.
-- The addresses are public configuration, not secrets. They belong in Vercel's environment variables, never in source control.
+- The addresses are public configuration, not secrets, and are mirrored in the README's "Deployed contracts" section.
 
 ### Frontend configuration
 
 The frontend reads its configuration through `import.meta.env[name]` inside `requiredAddress()` in `frontend/src/chainAdapter.ts`. That dynamic lookup was checked against the built bundle rather than assumed: Vite compiles `import.meta.env` into a real object literal (`...VITE_VERCEL_ENV:"production",...`), so a var set in Vercel at build time **is** reachable by dynamic key. Set these five in the Vercel project and redeploy:
 
 ```
-VITE_GRANT_ESCROW_ADDRESS=0xa323e031a9C8107a993a572Af23448696523e6aA
-VITE_USDG_ADDRESS=0x32288128Ff07Fc9e443161c1F336b784508a056A
-VITE_AAPL_ADDRESS=0xEf3383aBfAB7d12e2EB063438eeDAc30Cf4CA907
-VITE_TSLA_ADDRESS=0x9A7502Ea690107B22AC414982A187eb02648939A
-VITE_NVDA_ADDRESS=0x4Bd04EFe854Cdf2535CD006a3dEc448994FDFa27
+VITE_GRANT_ESCROW_ADDRESS=0x339a44f967dD1eD1bDBa98Fb4396DaB77e4D3645
+VITE_USDG_ADDRESS=0x308b3d480199ACcD21c8BE882A5E9F3077D0EaAC
+VITE_AAPL_ADDRESS=0x17078672b60471957f42A0343d510B1a4e81DC59
+VITE_TSLA_ADDRESS=0x6993Ef68e09ec698bb8A607Eb24a28060906b27E
+VITE_NVDA_ADDRESS=0x31bACde94bEa0FE3035227053dbf03a4B029a6fC
 ```
 
 `VITE_RH_RPC_URL` defaults to the public testnet RPC in `chainAdapter.ts` and does not need to be set.
@@ -112,7 +115,7 @@ Until those are set, the deployed site throws `Missing or invalid VITE_GRANT_ESC
 Ordered by what the submission checklist in the Build Spec §6 actually scores. Submissions close **4 Oct 2026**.
 
 1. **Verify the deployed contracts on the explorer.** The contracts are deployed (see the deployment record) but the explorer reports `is_verified: false`, and Build Spec §6 asks for explorer-verified contracts. This needs a Hardhat verify run against chain `46630` with the constructor arguments the demo script used. Nothing else on the checklist is blocked by it, but it is an unchecked item.
-2. **Set the five `VITE_*` addresses in Vercel and redeploy**, then confirm the live site reads them. Until that happens the deployed frontend throws on the gated routes. The values are in the deployment record.
+2. **Update the five `VITE_*` addresses in Vercel and redeploy.** The Step 16 signature change superseded the first deployment, so the values currently in Vercel point at contracts whose `fundGrant` no longer matches the frontend's ABI. Funding would revert. The current values are in the deployment record. Until this is done the deployed site cannot fund a bonus.
 3. **End-to-end test with two separate wallets** (Build Spec day 8): fund → release, and fund → timeout claim. The employer/deployer and contractor accounts are both funded.
 4. **Security pass against Build Spec §4 rules 1–15**, written up as the README security section so a judge scoring contract quality sees the reasoning. Rules 1–6, 8, 10–11, 13–14 are already reflected in `GrantEscrow.sol` and its tests; the split-during-escrow test that rule 6 demands explicitly exists. Rules 7, 9, 12, 15 need a documented position rather than an assumption — see below.
 5. **README**: plain-language concept (reuse the landing copy), security section, out-of-scope statement, the Robinhood Chain reserved-slot note, and the USDG integration note. It can now cite the deployed GrantEscrow address from the deployment record.
