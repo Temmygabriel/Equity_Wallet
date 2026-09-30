@@ -88,18 +88,25 @@ export const chainAdapter = {
     if (!stock) throw new Error("Grant uses a token outside the configured test-stock allowlist.");
     return { id: `GRANT-${grantId.toString().padStart(4, "0")}`, contractor: `${contractor.slice(0, 6)}…${contractor.slice(-4)}`, stock, stockAmount: formatUnits(rawEscrowAmount, 18), usdgAmount: "held", milestone: "Not stored by the testnet contract", deadline: new Date(Number(deadline) * 1000).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }), deadlineTimestamp: Number(deadline), state: status === 1 ? "LOCKED" : status === 2 ? "CLAIMED" : "LOCKED" };
   },
-  fundGrant: async (input: FundGrantInput): Promise<bigint> => {
+  /* The optional second argument is the additive change of spec §8.3: it fires
+     immediately before each of the three writes, so the form can show which
+     request the wallet is asking for. Callers that omit it behave exactly as
+     before. */
+  fundGrant: async (input: FundGrantInput, onStage?: (stage: 1 | 2 | 3) => void): Promise<bigint> => {
     const configured = config();
     const { account, client } = await wallet();
     const deadline = BigInt(Math.floor(input.deadline.getTime() / 1000));
     const usdgAmount = parseUnits(input.usdgAmount, 18);
     const minStockOut = parseUnits(input.minStockOut ?? input.usdgAmount, 18);
+    onStage?.(1);
     const createHash = await client.writeContract({ address: configured.grantEscrow, abi: grantEscrowAbi, functionName: "createGrant", args: [input.contractor, deadline], account });
     const createReceipt = await publicClient.waitForTransactionReceipt({ hash: createHash });
     const grantId = BigInt(createReceipt.logs[0]?.topics[1] ?? 0);
     if (grantId < 0n) throw new Error("Unable to read the newly created grant ID.");
+    onStage?.(2);
     const approvalHash = await client.writeContract({ address: configured.usdg, abi: erc20Abi, functionName: "approve", args: [configured.grantEscrow, usdgAmount], account });
     await publicClient.waitForTransactionReceipt({ hash: approvalHash });
+    onStage?.(3);
     const fundHash = await client.writeContract({ address: configured.grantEscrow, abi: grantEscrowAbi, functionName: "fundGrant", args: [grantId, usdgAmount, configured.stocks[input.stock], minStockOut], account });
     await publicClient.waitForTransactionReceipt({ hash: fundHash });
     return grantId;

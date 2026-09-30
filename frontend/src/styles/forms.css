@@ -38,8 +38,15 @@
 }
 
 .field-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 13px;
   color: var(--red-soft);
+}
+
+.field-error svg {
+  flex: none;
 }
 
 /* --- Jurisdiction gate (§6A) --------------------------------------------- */
@@ -190,3 +197,465 @@
     border-left: 0;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Employer: fund a bonus (§8). The form is a document; the certificate lives
+   on a sticky desk panel beside it.
+--------------------------------------------------------------------------- */
+
+.fund {
+  padding: 56px 0 96px;
+}
+
+.fund-head h1 {
+  font-size: 40px;
+  line-height: 1.15;
+}
+
+.fund-head p {
+  max-width: 620px;
+  margin-top: 14px;
+  color: var(--ink-soft);
+}
+
+.fund-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 440px);
+  gap: 72px;
+  align-items: start;
+  margin-top: 48px;
+}
+
+/* Reviewing widens the panel, so the certificate the employer is about to sign
+   is the largest thing on the page. */
+.fund-layout.is-review {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 560px);
+}
+
+.fund-col {
+  min-width: 0;
+  animation: swapIn 0.2s var(--ease-out);
+}
+
+@keyframes swapIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.fund-panel {
+  position: sticky;
+  top: 24px;
+  padding: 32px;
+  background: var(--desk);
+}
+
+.fund-panel .cert {
+  margin: 0 auto;
+}
+
+.fund-panel-cap {
+  margin-top: 18px;
+  font-size: 12px;
+  color: var(--on-desk-mute);
+  text-align: center;
+}
+
+/* --- Sections: a heading, a hairline above, no numbers ------------------- */
+
+.fsect {
+  margin-top: 40px;
+  padding-top: 28px;
+  border-top: 1px solid var(--line);
+}
+
+.fsect:first-child {
+  margin-top: 0;
+}
+
+.fsect h2 {
+  margin-bottom: 26px;
+  font-size: 22px;
+}
+
+.fsect-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.deadline-note {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--brass-deep);
+}
+
+/* --- Date input: the calendar icon in its leading slot ------------------- */
+
+.date-field {
+  position: relative;
+  display: block;
+}
+
+.date-slot {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  display: grid;
+  place-items: center;
+  color: var(--ink-soft);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.field .date-field input {
+  padding-left: 38px;
+}
+
+/* --- Stock picker -------------------------------------------------------- */
+
+.stocks {
+  display: flex;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.stock-opt {
+  position: relative;
+  flex: 1 1 0;
+  display: block;
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: border-color 0.12s var(--ease-out);
+}
+
+.stock-opt input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  opacity: 0;
+}
+
+.stock-opt.is-on {
+  border-color: var(--ink);
+}
+
+.stock-opt.is-on::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 2px;
+  background: var(--brass);
+}
+
+.stock-opt:focus-within {
+  outline: 2px solid var(--brass);
+  outline-offset: 3px;
+}
+
+.stock-opt .co {
+  display: block;
+  font-family: Fraunces, Georgia, serif;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+}
+
+.stock-opt .test {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.pill {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 2px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* --- Amount: underline only, so it reads as the certificate figure ------- */
+
+.field .amount-field {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--ink);
+}
+
+.field .amount-field .cur {
+  font-family: Fraunces, Georgia, serif;
+  font-size: 28px;
+  color: var(--ink-soft);
+}
+
+.field .amount-field input {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  font-family: Fraunces, Georgia, serif;
+  font-size: 40px;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.field .amount-field .unit {
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.amount-field input::-webkit-outer-spin-button,
+.amount-field input::-webkit-inner-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+}
+
+.amount-field input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* --- Errors: above the primary button, one sentence ---------------------- */
+
+.form-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 24px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-left: 1px solid var(--red-soft);
+  font-size: 14px;
+  color: var(--red-soft);
+  animation: errIn 0.2s var(--ease-out);
+}
+
+.form-error svg {
+  flex: none;
+  margin-top: 2px;
+}
+
+@keyframes errIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.fund-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  margin-top: 32px;
+}
+
+/* --- Review sheet -------------------------------------------------------- */
+
+.review-title {
+  margin-bottom: 24px;
+  font-size: 22px;
+}
+
+.review dl {
+  border-top: 1px solid var(--line);
+}
+
+.review dl > div {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 20px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.review dt {
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.review dd {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.icon-button {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius);
+  color: var(--ink-soft);
+}
+
+.icon-button:hover {
+  opacity: 0.85;
+}
+
+/* --- Funding progress: a real sequence, so numbering is allowed here ----- */
+
+.prog {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.prog li {
+  position: relative;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 12px;
+  padding: 18px 0;
+  color: var(--ink-soft);
+}
+
+.prog li.is-pending {
+  opacity: 0.6;
+}
+
+.prog li.is-active {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+/* The brass sweep of §5.4, under the line the wallet is asking about. */
+.prog li.is-active::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 1px;
+  background: var(--brass);
+  transform-origin: left;
+  animation: sweep 1.6s linear infinite;
+}
+
+@keyframes sweep {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.prog .n {
+  display: grid;
+  place-items: center;
+  min-height: 24px;
+  font-size: 13px;
+}
+
+.prog-help {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--ink-soft);
+}
+
+/* --- Success ------------------------------------------------------------- */
+
+.done h2 {
+  font-size: 26px;
+}
+
+.done > p {
+  margin-top: 12px;
+  color: var(--ink-soft);
+}
+
+.copy-row {
+  display: flex;
+  align-items: stretch;
+  margin-top: 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.copy-url {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 12px;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.copy-row .icon-button {
+  width: 46px;
+  height: auto;
+  min-height: 44px;
+  border-left: 1px solid var(--line);
+}
+
+.copy-note {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+@media (max-width: 860px) {
+  .fund {
+    padding: 40px 0 72px;
+  }
+
+  /* The panel moves above the form, stays in flow, and shows the certificate
+     at 70% of its desktop width. */
+  .fund-layout,
+  .fund-layout.is-review {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 40px;
+    margin-top: 36px;
+  }
+
+  .fund-panel {
+    order: -1;
+    position: static;
+    padding: 24px;
+  }
+
+  .fund-panel .cert {
+    max-width: 448px;
+  }
+}
+
+@media (max-width: 480px) {
+  .stocks {
+    flex-direction: column;
+  }
+
+  .fund-panel {
+    padding: 16px;
+  }
+
+  .review dl > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+  }
+}
+
