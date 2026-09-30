@@ -1,11 +1,15 @@
 # Publishes the contract sources to the Robinhood Chain testnet explorer.
 #
 # Manual dispatch only. Build Spec §6 asks for contracts verified on the explorer,
-# and the deployment record shows them as is_verified: false until this runs.
+# and the deployment record showed them as is_verified: false until this runs.
 #
 # No secrets are needed. Verification is a read of local sources plus an API
 # submission — it sends no transaction and spends no ETH, so there is no private
 # key in this job at all.
+#
+# GrantEscrow is the contract that matters for the submission; the mocks are
+# verified too so a judge can read every address in the deployment record rather
+# than taking the demo on trust.
 
 name: Verify contracts on the explorer
 
@@ -60,30 +64,71 @@ jobs:
       - name: Compile contracts
         run: npm run compile
 
-      # Constructor arguments must be in declaration order or the explorer will
-      # reject the match. GrantEscrow is (usdg, swapAdapter, aapl, tsla, nvda).
+      # Three things here are load-bearing and each was got wrong once:
       #
-      # working-directory matters: `npx hardhat` resolves the project from the
-      # current directory, and at the repo root there is no hardhat.config.ts, so
-      # it aborts with HH1 and verifies nothing.
+      #   working-directory — `npx hardhat` resolves the project from the current
+      #     directory, and at the repo root there is no hardhat.config.ts, so it
+      #     aborts with HH1 and verifies nothing.
       #
-      # pipefail matters just as much: without it the step's exit status is tee's,
-      # which is always 0, so a failed verification reports as a green job. That
-      # is how the first run of this workflow "passed" while doing nothing.
-      - name: Verify GrantEscrow
+      #   set -o pipefail — without it a step's exit status is tee's, which is
+      #     always 0, so a failed verification reports as a green job. That is
+      #     exactly how the first run of this workflow "passed" doing nothing.
+      #
+      #   tolerating "Already verified" — re-running this workflow is a normal
+      #     thing to do, and the explorer rejecting a duplicate is not a failure.
+      - name: Verify the contracts
         working-directory: contracts
+        env:
+          GRANT_ESCROW: ${{ inputs.grant_escrow_address }}
+          USDG: ${{ inputs.usdg_address }}
+          SWAP_ADAPTER: ${{ inputs.swap_adapter_address }}
+          AAPL: ${{ inputs.aapl_address }}
+          TSLA: ${{ inputs.tsla_address }}
+          NVDA: ${{ inputs.nvda_address }}
         run: |
           set -o pipefail
-          npx hardhat verify \
-            --network robinhoodTestnet \
-            "${{ inputs.grant_escrow_address }}" \
-            "${{ inputs.usdg_address }}" \
-            "${{ inputs.swap_adapter_address }}" \
-            "${{ inputs.aapl_address }}" \
-            "${{ inputs.tsla_address }}" \
-            "${{ inputs.nvda_address }}" \
-            --contract contracts/GrantEscrow.sol:GrantEscrow \
-            | tee verify.log
+          : > verify.log
+
+          verify() {
+            local label="$1"
+            shift
+            printf '\n===== %s =====\n' "$label" | tee -a verify.log
+            if npx hardhat verify --network robinhoodTestnet "$@" 2>&1 | tee -a verify.log; then
+              return 0
+            fi
+            if tail -n 5 verify.log | grep -q "Already verified"; then
+              echo "($label was already verified; nothing to do)" | tee -a verify.log
+              return 0
+            fi
+            return 1
+          }
+
+          status=0
+
+          # Constructor arguments must be in declaration order or the explorer
+          # rejects the match. GrantEscrow is (usdg, swapAdapter, aapl, tsla, nvda).
+          verify "GrantEscrow" "$GRANT_ESCROW" \
+            "$USDG" "$SWAP_ADAPTER" "$AAPL" "$TSLA" "$NVDA" \
+            --contract contracts/GrantEscrow.sol:GrantEscrow || status=1
+
+          verify "MockUSDG" "$USDG" \
+            --contract contracts/mocks/MockUSDG.sol:MockUSDG || status=1
+
+          verify "MockSwapAdapter" "$SWAP_ADAPTER" \
+            --contract contracts/mocks/MockSwapAdapter.sol:MockSwapAdapter || status=1
+
+          # MockStockToken is (name, symbol, multiplier); the deploy script uses
+          # a multiplier of 1e6 for all three so the UI can show whole shares.
+          verify "Mock AAPL" "$AAPL" "Test Apple Stock" "AAPL" 1000000 \
+            --contract contracts/mocks/MockStockToken.sol:MockStockToken || status=1
+
+          verify "Mock TSLA" "$TSLA" "Test Tesla Stock" "TSLA" 1000000 \
+            --contract contracts/mocks/MockStockToken.sol:MockStockToken || status=1
+
+          verify "Mock NVDA" "$NVDA" "Test Nvidia Stock" "NVDA" 1000000 \
+            --contract contracts/mocks/MockStockToken.sol:MockStockToken || status=1
+
+          exit $status
 
       - name: Publish the result
         if: always()
