@@ -42,10 +42,11 @@ Live on **Robinhood Chain testnet** (chain ID `46630`), deployed 30 September 20
 | Mock AAPL | [`0x17078672b60471957f42A0343d510B1a4e81DC59`](https://explorer.testnet.chain.robinhood.com/address/0x17078672b60471957f42A0343d510B1a4e81DC59) |
 | Mock TSLA | [`0x6993Ef68e09ec698bb8A607Eb24a28060906b27E`](https://explorer.testnet.chain.robinhood.com/address/0x6993Ef68e09ec698bb8A607Eb24a28060906b27E) |
 | Mock NVDA | [`0x31bACde94bEa0FE3035227053dbf03a4B029a6fC`](https://explorer.testnet.chain.robinhood.com/address/0x31bACde94bEa0FE3035227053dbf03a4B029a6fC) |
+| MockSwapAdapter | [`0x9B097E89cDe2f9DBa4001594C25692b5a5e5a529`](https://explorer.testnet.chain.robinhood.com/address/0x9B097E89cDe2f9DBa4001594C25692b5a5e5a529) |
 
 Live frontend: **https://equitywallet-psi.vercel.app**
 
-**These are mock assets deployed by the demo script.** They are not real securities, not real USDG, and have no value. The contracts are deployed but **not yet source-verified** on the explorer.
+**These are mock assets deployed by the demo script.** They are not real securities, not real USDG, and have no value. Every address above is **source-verified on the explorer**, so each link opens on readable Solidity rather than bytecode.
 
 ## Setup
 

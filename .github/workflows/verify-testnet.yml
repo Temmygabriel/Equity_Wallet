@@ -74,8 +74,10 @@ jobs:
       #     always 0, so a failed verification reports as a green job. That is
       #     exactly how the first run of this workflow "passed" doing nothing.
       #
-      #   tolerating "Already verified" — re-running this workflow is a normal
-      #     thing to do, and the explorer rejecting a duplicate is not a failure.
+      #   tolerating a duplicate — re-running this workflow is normal. Observed
+      #     behaviour is that hardhat prints "has already been verified" and still
+      #     exits 0, so the check below is a backstop rather than the mechanism,
+      #     matched against the message actually seen rather than a paraphrase.
       - name: Verify the contracts
         working-directory: contracts
         env:
@@ -96,7 +98,7 @@ jobs:
             if npx hardhat verify --network robinhoodTestnet "$@" 2>&1 | tee -a verify.log; then
               return 0
             fi
-            if tail -n 5 verify.log | grep -q "Already verified"; then
+            if tail -n 5 verify.log | grep -qi "already been verified"; then
               echo "($label was already verified; nothing to do)" | tee -a verify.log
               return 0
             fi

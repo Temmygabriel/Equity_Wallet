@@ -88,7 +88,8 @@ While locating a testnet deployer wallet, a private key was printed into an assi
 - GrantEscrow creation tx: `0x778227a19d4f0c5890e0c44237b0205ee8caa636f67d1c0e05747769e2c81519`
 - **Superseded first deployment** (do not use): GrantEscrow `0xa323e031a9C8107a993a572Af23448696523e6aA`, from run `36737126586`. It predates the `fundGrant` signature change.
 - Deployer `0xe5Fe9119000C9E1113dc504891A83Da7bbaa7a7b` is at `0.00992096` testnet ETH after both deploys — about `0.000079` ETH spent in total, against `0.01` funded. Roughly 125 deploys remain affordable.
-- **Source verification is outstanding**: the explorer reports `is_verified: false`. Build Spec §6 asks for explorer-verified contracts.
+- **All six contracts are verified on the explorer** (2026-09-30), confirmed by querying `module=contract&action=getsourcecode` directly rather than trusting the job log: GrantEscrow, MockUSDG, MockSwapAdapter, and the three MockStockTokens all return a non-empty `SourceCode`. Build Spec §6's explorer-verified item is satisfied. Re-runnable via the **Verify contracts on the explorer** workflow.
+  - The first verify run reported **success while verifying nothing**. `npx hardhat` was invoked from the repo root, where there is no `hardhat.config.ts`, so it aborted with `HH1: You are not inside a Hardhat project` — and the step piped through `tee`, whose exit status is always 0, so the abort could not fail the job. Both faults are now fixed (`working-directory: contracts`, `set -o pipefail`), and the same pipe was corrected in the deploy and two-wallet workflows. **A green check is only evidence if the log shows the work happening.**
 - These are **mock** assets deployed by the demo script. They are not real securities and not the official USDG.
 - The addresses are public configuration, not secrets, and are mirrored in the README's "Deployed contracts" section.
 
@@ -114,9 +115,9 @@ Until those are set, the deployed site throws `Missing or invalid VITE_GRANT_ESC
 
 Ordered by what the submission checklist in the Build Spec §6 actually scores. Submissions close **4 Oct 2026**.
 
-1. **Verify the deployed contracts on the explorer.** The contracts are deployed (see the deployment record) but the explorer reports `is_verified: false`, and Build Spec §6 asks for explorer-verified contracts. This needs a Hardhat verify run against chain `46630` with the constructor arguments the demo script used. Nothing else on the checklist is blocked by it, but it is an unchecked item.
+1. ~~**Verify the deployed contracts on the explorer.**~~ **Done 2026-09-30** — all six verified, confirmed against the explorer's own API. See the deployment record.
 2. **Update the five `VITE_*` addresses in Vercel and redeploy.** The Step 16 signature change superseded the first deployment, so the values currently in Vercel point at contracts whose `fundGrant` no longer matches the frontend's ABI. Funding would revert. The current values are in the deployment record. Until this is done the deployed site cannot fund a bonus.
-3. **End-to-end test with two separate wallets** (Build Spec day 8): fund → release, and fund → timeout claim. The employer/deployer and contractor accounts are both funded.
+3. **End-to-end test with two separate wallets** (Build Spec day 8): fund → release, and fund → timeout claim. **Blocked on funding the contractor account:** `0x49B4f09C5894c1C90B0ca9099AF3De0Fad7f3037` holds `0` testnet ETH on chain `46630`, so the contractor-side `claimAfterTimeout` call would fail for gas. The employer/deployer holds `0.00992096` and can fund it. `CONTRACTOR_PRIVATE_KEY` is also not yet set as a repository secret.
 4. **Security pass against Build Spec §4 rules 1–15**, written up as the README security section so a judge scoring contract quality sees the reasoning. Rules 1–6, 8, 10–11, 13–14 are already reflected in `GrantEscrow.sol` and its tests; the split-during-escrow test that rule 6 demands explicitly exists. Rules 7, 9, 12, 15 need a documented position rather than an assumption — see below.
 5. **README**: plain-language concept (reuse the landing copy), security section, out-of-scope statement, the Robinhood Chain reserved-slot note, and the USDG integration note. It can now cite the deployed GrantEscrow address from the deployment record.
 6. **Demo video** showing the full loop.
