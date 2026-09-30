@@ -74,7 +74,7 @@ export function App() {
         <main className="surface-blank" />
       </DeskShell>
     ) : (
-      <ContractorGrant header={header} grantId={location.id} account={account} />
+      <ContractorGrant header={header} grantId={location.id} account={account} navigate={navigate} />
     );
   } else {
     content = (

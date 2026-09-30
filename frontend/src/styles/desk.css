@@ -367,3 +367,124 @@
     min-height: 44px;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   The payoff screen: the contractor's certificate (§11). The desk centre is
+   where the certificate sits, and everything else hangs under it.
+--------------------------------------------------------------------------- */
+
+/* The desk is a flex column at min-height 100svh, so this takes the space below
+   the header and centres the block in it. The certificate's own centre then
+   lands a little above the middle — about 44% of the viewport (§11.1) — because
+   the context and actions add height beneath it. */
+.payoff {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  width: 100%;
+  padding: 72px 24px 96px;
+}
+
+.payoff-stage {
+  width: 100%;
+  max-width: 720px;
+}
+
+.payoff-stage .cert {
+  max-width: 720px;
+  margin: 0 auto;
+  animation: certIn 0.9s var(--ease-out) 0.2s both;
+}
+
+.payoff-context {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  max-width: 620px;
+  text-align: center;
+  font-size: 15px;
+  color: var(--on-desk-soft);
+}
+
+.payoff-context .lnk {
+  border-bottom-color: var(--brass-hi);
+  color: var(--on-desk);
+}
+
+.payoff-context .payoff-strong {
+  color: var(--on-desk);
+}
+
+.payoff-quiet {
+  font-size: 13px;
+  color: var(--on-desk-mute);
+}
+
+.payoff-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+/* The busy rule of §5.4: a 1px brass sweep under the button, no spinner. */
+.payoff-actions .btn.is-busy {
+  position: relative;
+}
+
+.payoff-actions .btn.is-busy::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: -10px;
+  left: 0;
+  height: 1px;
+  background: var(--brass-hi);
+  transform-origin: left;
+  animation: sweep 1.6s linear infinite;
+}
+
+/* A single underline field on the desk, for the bonus number. */
+.payoff-field {
+  align-items: center;
+  width: min(320px, 100%);
+}
+
+.payoff-field > label {
+  font-size: 13px;
+  color: var(--on-desk-soft);
+}
+
+.desk .payoff-field input {
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 0;
+  text-align: center;
+  color: var(--on-desk);
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--on-desk);
+  border-radius: 0;
+}
+
+.desk .form-error {
+  border-color: rgba(241, 239, 231, 0.25);
+  border-left-color: var(--red-desk);
+  color: var(--red-desk);
+}
+
+@media (max-height: 780px) {
+  .payoff {
+    padding: 32px 24px 48px;
+  }
+}
+
+@media (max-width: 860px) {
+  .payoff {
+    padding: 40px 24px 72px;
+  }
+}

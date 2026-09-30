@@ -22,6 +22,10 @@ export type CertificateProps = {
   stampDelayMs?: number;
   /** Draft with nothing entered yet: amount and rows sit at 60% (§3.3). */
   dimmed?: boolean;
+  /** Overrides the Status row. Used for the `Reading…` of §11.1. */
+  statusText?: string;
+  /** Overrides the sub-line, for the no-dollar-amount variant of §3.2. */
+  subLine?: string;
 };
 
 const STATUS: Record<CertState, string> = {
@@ -49,7 +53,9 @@ export function Certificate({
   reference,
   deliveredTo,
   stampDelayMs = 0,
-  dimmed = false
+  dimmed = false,
+  statusText,
+  subLine: subLineOverride
 }: CertificateProps) {
   const unloaded = state === "unloaded";
   const sealedState = state === "released" || state === "claimed";
@@ -83,12 +89,12 @@ export function Certificate({
     };
   }, [sealedState, stampDelayMs]);
 
-  const status = STATUS[state];
+  const status = statusText ?? STATUS[state];
   const delivered = deliveredText(state, deliveredTo);
   const referenceText = unloaded || state === "draft" ? "No. -" : `No. ${reference ?? "-"}`;
-  const subLine = unloaded
-    ? "Enter your bonus number"
-    : `in ${stockName ?? "-"} stock${recipient ? `, for ${recipient}` : ""}`;
+  const subLine =
+    subLineOverride ??
+    (unloaded ? "Enter your bonus number" : `in ${stockName ?? "-"} stock${recipient ? `, for ${recipient}` : ""}`);
   const dash = "-";
 
   const announcement =

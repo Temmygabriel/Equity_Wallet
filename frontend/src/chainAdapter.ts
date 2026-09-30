@@ -24,7 +24,10 @@ const grantEscrowAbi = [
   { type: "function", name: "fundGrant", stateMutability: "nonpayable", inputs: [{ name: "grantId", type: "uint256" }, { name: "usdgAmount", type: "uint256" }, { name: "selectedToken", type: "address" }, { name: "minStockOut", type: "uint256" }], outputs: [] },
   { type: "function", name: "releaseGrant", stateMutability: "nonpayable", inputs: [{ name: "grantId", type: "uint256" }], outputs: [] },
   { type: "function", name: "claimAfterTimeout", stateMutability: "nonpayable", inputs: [{ name: "grantId", type: "uint256" }], outputs: [] },
-  { type: "function", name: "grants", stateMutability: "view", inputs: [{ name: "grantId", type: "uint256" }], outputs: [{ name: "employer", type: "address" }, { name: "contractor", type: "address" }, { name: "selectedToken", type: "address" }, { name: "rawEscrowAmount", type: "uint256" }, { name: "fundingMultiplier", type: "uint256" }, { name: "deadline", type: "uint256" }, { name: "status", type: "uint8" }] }
+  { type: "function", name: "grants", stateMutability: "view", inputs: [{ name: "grantId", type: "uint256" }], outputs: [{ name: "employer", type: "address" }, { name: "contractor", type: "address" }, { name: "selectedToken", type: "address" }, { name: "rawEscrowAmount", type: "uint256" }, { name: "fundingMultiplier", type: "uint256" }, { name: "deadline", type: "uint256" }, { name: "status", type: "uint8" }] },
+  /* Both release paths set the same RELEASED status, so the status alone cannot
+     say which one ran. The timeoutClaim flag on this event can (spec §11.4). */
+  { type: "event", name: "GrantReleased", inputs: [{ name: "grantId", type: "uint256", indexed: true }, { name: "contractor", type: "address", indexed: true }, { name: "rawEscrowAmount", type: "uint256", indexed: false }, { name: "timeoutClaim", type: "bool", indexed: false }] }
 ] as const;
 
 const erc20Abi = [
@@ -33,7 +36,10 @@ const erc20Abi = [
 
 type Config = { grantEscrow: Address; usdg: Address; stocks: Record<"AAPL" | "TSLA" | "NVDA", Address> };
 export type GrantState = "LOCKED" | "UNLOCKED" | "CLAIMED";
-export type DemoGrant = { id: string; contractor: string; stock: "AAPL" | "TSLA" | "NVDA"; stockAmount: string; usdgAmount: string; milestone: string; deadline: string; deadlineTimestamp: number; state: GrantState };
+/* employerAddress, contractorAddress and releasedBy are additive read-only
+   fields (spec §10.3, and §11.4 for releasedBy). No existing field was renamed
+   or removed, so every existing caller keeps working. */
+export type DemoGrant = { id: string; contractor: string; employerAddress?: string; contractorAddress?: string; releasedBy?: "employer" | "timeout"; stock: "AAPL" | "TSLA" | "NVDA"; stockAmount: string; usdgAmount: string; milestone: string; deadline: string; deadlineTimestamp: number; state: GrantState };
 export type FundGrantInput = { contractor: Address; deadline: Date; stock: "AAPL" | "TSLA" | "NVDA"; usdgAmount: string; minStockOut?: string };
 
 declare global { interface Window { ethereum?: EIP1193Provider } }
@@ -86,7 +92,21 @@ export const chainAdapter = {
     if (!employer || employer === "0x0000000000000000000000000000000000000000") throw new Error("Grant was not found on the configured test contract.");
     const stock = stockByAddress(configured.stocks, selectedToken);
     if (!stock) throw new Error("Grant uses a token outside the configured test-stock allowlist.");
-    return { id: `GRANT-${grantId.toString().padStart(4, "0")}`, contractor: `${contractor.slice(0, 6)}…${contractor.slice(-4)}`, stock, stockAmount: formatUnits(rawEscrowAmount, 18), usdgAmount: "held", milestone: "Not stored by the testnet contract", deadline: new Date(Number(deadline) * 1000).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }), deadlineTimestamp: Number(deadline), state: status === 1 ? "LOCKED" : status === 2 ? "CLAIMED" : "LOCKED" };
+    /* Released and timeout-claimed share one status on chain. The event's
+       timeoutClaim flag is the only honest way to tell them apart, so read it
+       when the grant is unlocked. If the log range is refused, say nothing
+       rather than guess (§11.4). */
+    let releasedBy: DemoGrant["releasedBy"];
+    if (status === 2) {
+      try {
+        const events = await publicClient.getContractEvents({ address: configured.grantEscrow, abi: grantEscrowAbi, eventName: "GrantReleased", args: { grantId }, fromBlock: 0n });
+        const last = events[events.length - 1];
+        if (last) releasedBy = last.args.timeoutClaim ? "timeout" : "employer";
+      } catch {
+        releasedBy = undefined;
+      }
+    }
+    return { id: `GRANT-${grantId.toString().padStart(4, "0")}`, contractor: `${contractor.slice(0, 6)}…${contractor.slice(-4)}`, employerAddress: employer, contractorAddress: contractor, releasedBy, stock, stockAmount: formatUnits(rawEscrowAmount, 18), usdgAmount: "held", milestone: "Not stored by the testnet contract", deadline: new Date(Number(deadline) * 1000).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }), deadlineTimestamp: Number(deadline), state: status === 1 ? "LOCKED" : status === 2 ? "CLAIMED" : "LOCKED" };
   },
   /* The optional second argument is the additive change of spec §8.3: it fires
      immediately before each of the three writes, so the form can show which
