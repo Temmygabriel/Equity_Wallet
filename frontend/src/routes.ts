@@ -1,4 +1,6 @@
-export const routes = ["/", "/employer/fund", "/employer/grants", "/contractor/grant"] as const;
+/* "/__cert" is a temporary verification route (spec checkpoint 2) and is
+   removed before the final commit. */
+export const routes = ["/", "/employer/fund", "/employer/grants", "/contractor/grant", "/__cert"] as const;
 
 export type Route = (typeof routes)[number];
 
@@ -8,4 +10,5 @@ export const GATED_ROUTES: readonly Route[] = ["/employer/fund", "/employer/gran
 export type Surface = "desk" | "paper";
 
 /** The desk is the landing hero and the contractor page; everything else is paper. */
-export const surfaceFor = (route: Route): Surface => (route === "/" || route === "/contractor/grant" ? "desk" : "paper");
+export const surfaceFor = (route: Route): Surface =>
+  route === "/" || route === "/contractor/grant" ? "desk" : "paper";

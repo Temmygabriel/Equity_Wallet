@@ -3,6 +3,7 @@ import { Footer } from "./components/Footer";
 import { Header } from "./components/Header";
 import { useAccount } from "./hooks/useAccount";
 import { ContractorGrant } from "./pages/ContractorGrant";
+import { CertGallery } from "./pages/CertGallery";
 import { EmployerFund } from "./pages/EmployerFund";
 import { EmployerGrants } from "./pages/EmployerGrants";
 import { Landing } from "./pages/Landing";
@@ -50,6 +51,7 @@ export function App() {
       {location.route === "/employer/fund" && <EmployerFund navigate={navigate} />}
       {location.route === "/employer/grants" && <EmployerGrants navigate={navigate} />}
       {location.route === "/contractor/grant" && <ContractorGrant grantId={location.id} account={account} />}
+      {location.route === "/__cert" && <CertGallery />}
 
       {surface === "paper" && <Footer gated={gated} />}
     </div>

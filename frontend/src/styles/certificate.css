@@ -1,0 +1,323 @@
+/* ---------------------------------------------------------------------------
+   The certificate. Ported from the approved mockup (spec §3).
+
+   Two values here are not in the token set and are kept verbatim from the
+   mockup, named locally: --cert-meta (the dt / reference grey) and
+   --cert-seal-ink (the seal's engraved line colour, §3.4).
+--------------------------------------------------------------------------- */
+
+.cert {
+  --cert-meta: #6b7185;
+  --cert-seal-ink: #e7f0e6;
+
+  position: relative;
+  width: 100%;
+  max-width: 640px;
+  aspect-ratio: 1.42;
+  background: var(--stock);
+  color: var(--ink);
+  padding: 14px;
+  box-shadow:
+    0 1px 0 #fff inset,
+    0 2px 4px rgba(0, 0, 0, 0.35),
+    0 30px 60px -10px rgba(0, 0, 0, 0.6),
+    0 60px 120px -20px rgba(0, 0, 0, 0.5);
+}
+
+/* Scoped to .f1 and its child deliberately. A bare `.cert > div` also matches
+   the seal and stretches it into an ellipse — the exact bug §3.1 warns about. */
+.cert > .f1 {
+  height: 100%;
+  border: 1px solid var(--stock-line);
+  padding: 6px;
+}
+
+.cert > .f1 > div {
+  height: 100%;
+  border: 1.5px solid var(--stock-brass);
+  padding: clamp(16px, 3.2vw, 34px);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Engraving. Top band and the seal rosette only — never behind text. */
+.band {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 10px;
+  opacity: 0.9;
+  background:
+    repeating-linear-gradient(90deg, var(--stock-brass) 0 1px, transparent 1px 5px),
+    repeating-linear-gradient(90deg, transparent 0 2px, #b39a6655 2px 3px);
+}
+
+.ch {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-top: 6px;
+}
+
+.ch .i {
+  font: italic 400 15px Fraunces, Georgia, serif;
+  color: var(--brass-deep);
+}
+
+.ch .r {
+  font-size: 11px;
+  color: var(--cert-meta);
+}
+
+@keyframes refIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* The reference crossfades from "No. -" to "No. 0042" when funding lands (§5.2). */
+.ref {
+  animation: refIn 0.2s var(--ease-out);
+}
+
+.amt {
+  margin-top: auto;
+  font: 400 clamp(44px, 7.4vw, 84px)/1 Fraunces, Georgia, serif;
+  letter-spacing: -0.035em;
+  font-variant-numeric: tabular-nums;
+}
+
+.amt small {
+  display: block;
+  font: italic 400 clamp(15px, 1.7vw, 19px)/1.3 Fraunces, Georgia, serif;
+  letter-spacing: 0;
+  color: var(--ink-soft);
+  margin-top: 8px;
+}
+
+.rows {
+  margin-top: auto;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 6px 24px;
+  font-size: clamp(11px, 1.25vw, 13px);
+}
+
+.rows dt {
+  color: var(--cert-meta);
+}
+
+.rows dd {
+  margin: 0 0 6px;
+  color: var(--ink);
+  font-weight: 500;
+}
+
+/* Green is reserved for the unlocked status and the seal. */
+.rows dd.is-unlocked {
+  color: var(--green);
+}
+
+/* --- Draft ribbon -------------------------------------------------------- */
+
+.draft-ribbon {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--brass-deep);
+  background: var(--stock);
+  border-right: 1px dashed var(--brass);
+  border-bottom: 1px dashed var(--brass);
+  transition: opacity 0.2s var(--ease-out);
+}
+
+.cert:not([data-s="draft"]) .draft-ribbon {
+  opacity: 0;
+}
+
+/* Draft with nothing entered yet: the figures sit back until they mean something. */
+.cert.is-dimmed .amt,
+.cert.is-dimmed .rows {
+  opacity: 0.6;
+}
+
+/* --- The strap is the lock ---------------------------------------------- */
+
+.strap {
+  position: absolute;
+  left: -1px;
+  right: -1px;
+  top: 46%;
+  height: 44px;
+  background: var(--ink);
+  color: var(--on-desk);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 13px;
+  text-align: center;
+  transform-origin: left;
+  transform: translateX(-105%);
+  transition:
+    transform 0.7s var(--ease-strap),
+    opacity 0.4s;
+}
+
+.strap::before,
+.strap::after {
+  content: "";
+  position: absolute;
+  top: 5px;
+  bottom: 5px;
+  width: 1px;
+  background: var(--brass-hi);
+}
+
+.strap::before {
+  left: 12px;
+}
+
+.strap::after {
+  right: 12px;
+}
+
+.strap i {
+  font: italic 400 15px Fraunces, Georgia, serif;
+  color: var(--brass-hi);
+}
+
+.cert[data-s="held"] .strap {
+  transform: translateX(0);
+}
+
+.cert[data-s="released"] .strap,
+.cert[data-s="claimed"] .strap {
+  transform: translateX(105%);
+  opacity: 0;
+}
+
+/* --- Seal ---------------------------------------------------------------- */
+
+.seal {
+  position: absolute;
+  right: -18px;
+  bottom: -22px;
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  background: var(--green);
+  color: var(--cert-seal-ink);
+  display: grid;
+  place-items: center;
+  text-align: center;
+  transform: rotate(-8deg) scale(0);
+  opacity: 0;
+  transition:
+    transform 0.2s var(--ease-out),
+    opacity 0.2s var(--ease-out);
+  box-shadow:
+    0 6px 14px rgba(0, 0, 0, 0.4),
+    inset 0 0 0 4px var(--green),
+    inset 0 0 0 5.5px var(--green-hi);
+}
+
+.cert[data-seal="on"] .seal {
+  transform: rotate(-8deg) scale(1);
+  opacity: 1;
+  transition:
+    transform 0.55s var(--ease-stamp) 0.35s,
+    opacity 0.33s linear 0.35s;
+}
+
+.seal .rosette {
+  position: absolute;
+  inset: 6px;
+  opacity: 0.5;
+}
+
+.seal span {
+  position: relative;
+  font: italic 400 14px/1.15 Fraunces, Georgia, serif;
+}
+
+/* The stamp landing: the certificate takes the impact. */
+@keyframes stampImpact {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(2px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.cert.is-impact {
+  animation: stampImpact 0.12s ease-in-out;
+}
+
+/* --- Nothing loaded yet -------------------------------------------------- */
+
+.cert[data-s="unloaded"] {
+  opacity: 0.45;
+}
+
+/* --- Responsive ---------------------------------------------------------- */
+
+/* Overflow guard rather than a design breakpoint: below this width the 1.42
+   ratio leaves too little height for the rows, so the certificate becomes
+   content-sized instead of clipping its own text. */
+@media (max-width: 560px) {
+  .cert {
+    aspect-ratio: auto;
+  }
+
+  .cert > .f1 {
+    height: auto;
+  }
+
+  .cert > .f1 > div {
+    height: auto;
+  }
+}
+
+@media (max-width: 860px) {
+  .seal {
+    right: -8px;
+    bottom: -8px;
+    width: 76px;
+    height: 76px;
+  }
+
+  .seal span {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .cert > .f1 > div {
+    padding: 16px;
+  }
+
+  .ch .r {
+    display: none;
+  }
+
+  .amt {
+    font-size: 44px;
+  }
+}
