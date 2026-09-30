@@ -13,8 +13,8 @@ Equity Benefit Wallet is a hackathon MVP for helping employers issue and manage 
 
 ## Vercel deployment
 
-- Production is `https://equitywallet-psi.vercel.app`, served from `main`. It has been confirmed publicly reachable and confirmed to **not** contain any of the redesign.
-- **Preview deployments are behind Vercel Deployment Protection.** Any preview URL returns Vercel's "Login – Vercel" page with HTTP 200 to an unauthenticated client, so HTTP status checks and `curl` cannot validate a preview, and every route appears to return 200. Visual validation of a preview requires a browser signed in to Vercel. Do not report a preview as validated on the strength of a 200.
+- Production is `https://equitywallet-psi.vercel.app`, served from `main`. **As of the Step 15 merge it serves the Direction A redesign** — confirmed by fetching the live bundle and stylesheet, not inferred from the merge: the new landing copy, `data-seal`, the gate's demo-only label, and the `--desk` / `--red-desk` / `--line-strong` / `--cert-seal-ink` tokens are all present, and the pre-redesign `cert-core` is gone. Because production is public, it is the right target for the browser design review at 320/390/768/1440.
+- **Preview deployments are behind Vercel Deployment Protection.** Any preview URL returns Vercel's "Login – Vercel" page with HTTP 200 to an unauthenticated client, so HTTP status checks and `curl` cannot validate a preview, and every route appears to return 200. Visual validation of a preview requires a browser signed in to Vercel. Do not report a preview as validated on the strength of a 200. Note the shell HTML is a ~1 KB Vite SPA stub, so grepping it proves nothing about what the app renders — check the JS/CSS assets it references.
 
 ## Core concept
 
