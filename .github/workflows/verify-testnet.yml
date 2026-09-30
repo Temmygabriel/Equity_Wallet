@@ -1,0 +1,91 @@
+# Publishes the contract sources to the Robinhood Chain testnet explorer.
+#
+# Manual dispatch only. Build Spec §6 asks for contracts verified on the explorer,
+# and the deployment record shows them as is_verified: false until this runs.
+#
+# No secrets are needed. Verification is a read of local sources plus an API
+# submission — it sends no transaction and spends no ETH, so there is no private
+# key in this job at all.
+
+name: Verify contracts on the explorer
+
+on:
+  workflow_dispatch:
+    inputs:
+      grant_escrow_address:
+        description: GrantEscrow address
+        required: true
+        default: "0x339a44f967dD1eD1bDBa98Fb4396DaB77e4D3645"
+      usdg_address:
+        description: MockUSDG address (constructor arg 1)
+        required: true
+        default: "0x308b3d480199ACcD21c8BE882A5E9F3077D0EaAC"
+      swap_adapter_address:
+        description: MockSwapAdapter address (constructor arg 2)
+        required: true
+        default: "0x9B097E89cDe2f9DBa4001594C25692b5a5e5a529"
+      aapl_address:
+        description: Mock AAPL address (constructor arg 3)
+        required: true
+        default: "0x17078672b60471957f42A0343d510B1a4e81DC59"
+      tsla_address:
+        description: Mock TSLA address (constructor arg 4)
+        required: true
+        default: "0x6993Ef68e09ec698bb8A607Eb24a28060906b27E"
+      nvda_address:
+        description: Mock NVDA address (constructor arg 5)
+        required: true
+        default: "0x31bACde94bEa0FE3035227053dbf03a4B029a6fC"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      RH_RPC_URL: https://rpc.testnet.chain.robinhood.com
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Compile contracts
+        run: npm run compile
+
+      # Constructor arguments must be in declaration order or the explorer will
+      # reject the match. GrantEscrow is (usdg, swapAdapter, aapl, tsla, nvda).
+      - name: Verify GrantEscrow
+        run: |
+          npx hardhat verify \
+            --network robinhoodTestnet \
+            "${{ inputs.grant_escrow_address }}" \
+            "${{ inputs.usdg_address }}" \
+            "${{ inputs.swap_adapter_address }}" \
+            "${{ inputs.aapl_address }}" \
+            "${{ inputs.tsla_address }}" \
+            "${{ inputs.nvda_address }}" \
+            --contract contracts/GrantEscrow.sol:GrantEscrow \
+            | tee verify.log
+
+      - name: Publish the result
+        if: always()
+        run: |
+          {
+            echo "## Explorer verification"
+            echo
+            if [ -s verify.log ]; then
+              echo '```'
+              cat verify.log
+              echo '```'
+            else
+              echo "No output was produced."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

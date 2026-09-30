@@ -20,6 +20,23 @@ const config: HardhatUserConfig = {
       url: robinhoodTestnetRpcUrl,
       accounts: deployerPrivateKey ? [deployerPrivateKey] : []
     }
+  },
+  /* The Robinhood Chain testnet explorer answers the Etherscan-compatible API
+     (`module=contract&action=verifysourcecode`), so hardhat-verify can drive it.
+     Blockscout accepts any non-empty key, so this is a placeholder rather than a
+     secret; set EXPLORER_API_KEY only if the explorer ever starts enforcing one. */
+  etherscan: {
+    apiKey: { robinhoodTestnet: process.env.EXPLORER_API_KEY ?? "blockscout" },
+    customChains: [
+      {
+        network: "robinhoodTestnet",
+        chainId: 46630,
+        urls: {
+          apiURL: "https://explorer.testnet.chain.robinhood.com/api",
+          browserURL: "https://explorer.testnet.chain.robinhood.com"
+        }
+      }
+    ]
   }
 };
 
