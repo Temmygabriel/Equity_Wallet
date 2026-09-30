@@ -51,8 +51,14 @@ jobs:
 
       # tee so the addresses survive into the summary below. Never enable shell
       # tracing here: it would print the key.
+      #
+      # pipefail is required: without it the step's exit status is tee's, which is
+      # always 0, so a deploy that reverted mid-way would report as a green run
+      # and publish a half-written address list.
       - name: Deploy the testnet demo
-        run: npm run deploy:demo:testnet --workspace contracts | tee deploy.log
+        run: |
+          set -o pipefail
+          npm run deploy:demo:testnet --workspace contracts | tee deploy.log
 
       # Runs even when the deploy fails, so a partial failure still shows its
       # error in the summary.

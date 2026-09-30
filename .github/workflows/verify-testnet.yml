@@ -62,8 +62,18 @@ jobs:
 
       # Constructor arguments must be in declaration order or the explorer will
       # reject the match. GrantEscrow is (usdg, swapAdapter, aapl, tsla, nvda).
+      #
+      # working-directory matters: `npx hardhat` resolves the project from the
+      # current directory, and at the repo root there is no hardhat.config.ts, so
+      # it aborts with HH1 and verifies nothing.
+      #
+      # pipefail matters just as much: without it the step's exit status is tee's,
+      # which is always 0, so a failed verification reports as a green job. That
+      # is how the first run of this workflow "passed" while doing nothing.
       - name: Verify GrantEscrow
+        working-directory: contracts
         run: |
+          set -o pipefail
           npx hardhat verify \
             --network robinhoodTestnet \
             "${{ inputs.grant_escrow_address }}" \
@@ -81,9 +91,9 @@ jobs:
           {
             echo "## Explorer verification"
             echo
-            if [ -s verify.log ]; then
+            if [ -s contracts/verify.log ]; then
               echo '```'
-              cat verify.log
+              cat contracts/verify.log
               echo '```'
             else
               echo "No output was produced."

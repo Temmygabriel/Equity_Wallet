@@ -69,8 +69,13 @@ jobs:
         run: npm run compile
 
       # Never enable shell tracing here: it would print both keys.
+      #
+      # pipefail is required: without it the step's exit status is tee's, which is
+      # always 0, so a failing assertion would report as a green run.
       - name: Run the two-wallet flow
-        run: npm run e2e:testnet --workspace contracts | tee e2e.log
+        run: |
+          set -o pipefail
+          npm run e2e:testnet --workspace contracts | tee e2e.log
 
       # Runs even on failure, so a failing check still reaches the summary.
       - name: Publish the results
