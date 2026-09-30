@@ -57,7 +57,9 @@
   inset: 0;
   z-index: 30;
   display: grid;
-  place-items: center;
+  /* `safe` keeps the top of a tall sheet reachable: without it the overflow
+     lands past the start edge and scrolling cannot get to it. */
+  place-items: safe center;
   padding: 24px;
   overflow-y: auto;
 }
@@ -185,7 +187,7 @@
 
 @media (max-width: 480px) {
   .gate {
-    align-items: end;
+    align-items: safe end;
     padding: 0;
   }
 
@@ -330,7 +332,9 @@
   flex: 1 1 0;
   display: block;
   padding: 18px 20px;
-  border: 1px solid var(--line);
+  /* The one place --line is load-bearing: these three edges are the targets, so
+     they carry the component-boundary contrast of §13 rather than the hairline. */
+  border: 1px solid var(--line-strong);
   border-radius: var(--radius);
   cursor: pointer;
   transition: border-color 0.12s var(--ease-out);

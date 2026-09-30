@@ -36,6 +36,15 @@ const STATUS: Record<CertState, string> = {
   unloaded: "-"
 };
 
+/* Under reduced motion the entrance is already over, so waiting 1.6s for the
+   on-load stamp would be a pause with nothing in it. The delay collapses and
+   the seal is simply there. */
+function stampDelay(ms: number): number {
+  if (ms === 0) return 0;
+  if (typeof window.matchMedia !== "function") return 0;
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : ms;
+}
+
 function deliveredText(state: CertState, deliveredTo?: string): string {
   if (state === "claimed") return "Claimed automatically";
   if (state === "released") return deliveredTo ?? "Claimed automatically";
@@ -59,35 +68,36 @@ export function Certificate({
 }: CertificateProps) {
   const unloaded = state === "unloaded";
   const sealedState = state === "released" || state === "claimed";
+  const delay = stampDelay(stampDelayMs);
 
   /* The seal is transition-driven, not a keyframe, so removing it animates back
      out (the preview direction of §5.2) without a force-reflow hack. The
      transition's own 350ms delay is what stages the stamp. */
-  const [sealed, setSealed] = useState(sealedState && stampDelayMs === 0);
+  const [sealed, setSealed] = useState(sealedState && delay === 0);
   useEffect(() => {
     if (!sealedState) {
       setSealed(false);
       return;
     }
-    if (stampDelayMs === 0) {
+    if (delay === 0) {
       setSealed(true);
       return;
     }
-    const timer = window.setTimeout(() => setSealed(true), stampDelayMs);
+    const timer = window.setTimeout(() => setSealed(true), delay);
     return () => window.clearTimeout(timer);
-  }, [sealedState, stampDelayMs]);
+  }, [sealedState, delay]);
 
   /* The stamp lands. 650ms after the seal starts, per §5.2. */
   const [impact, setImpact] = useState(false);
   useEffect(() => {
     if (!sealedState) return;
-    const start = window.setTimeout(() => setImpact(true), stampDelayMs + 650);
-    const stop = window.setTimeout(() => setImpact(false), stampDelayMs + 780);
+    const start = window.setTimeout(() => setImpact(true), delay + 650);
+    const stop = window.setTimeout(() => setImpact(false), delay + 780);
     return () => {
       window.clearTimeout(start);
       window.clearTimeout(stop);
     };
-  }, [sealedState, stampDelayMs]);
+  }, [sealedState, delay]);
 
   const status = statusText ?? STATUS[state];
   const delivered = deliveredText(state, deliveredTo);

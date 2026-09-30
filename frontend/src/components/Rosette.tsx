@@ -24,7 +24,9 @@ export function Rosette() {
   return (
     <svg className="rosette" viewBox="-60 -60 120 120" aria-hidden="true">
       {ROSETTE_PATHS.map((d, index) => (
-        <path key={index} d={d} fill="none" stroke="#E7F0E6" strokeWidth={0.5} vectorEffect="non-scaling-stroke" />
+        /* currentColor, so the engraving colour lives once, on .seal in
+           certificate.css, and not again here. */
+        <path key={index} d={d} fill="none" stroke="currentColor" strokeWidth={0.5} vectorEffect="non-scaling-stroke" />
       ))}
     </svg>
   );

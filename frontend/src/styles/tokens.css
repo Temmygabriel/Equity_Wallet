@@ -2,19 +2,24 @@
    Tokens. Direction A "The Desk". Values ported from the approved mockup
    (EBW_DIRECTION_A_DEEPSEEK_SPEC.md §2), not re-derived.
 
-   Two deliberate deviations, both recorded in PROGRESS.md:
+   Three deliberate deviations, all recorded in PROGRESS.md:
    - No prefers-color-scheme dark variant. The light paper / dark desk system is
      the design, and auto-inverting --paper would break it. The spec's own token
      block (§2) lists no dark values; the mockup's dark block was not ported.
    - --red-desk is added. §6 asks for --red-soft on the desk header, but
      #8C3B32 on --desk #0E1830 measures 2.33:1, which fails WCAG AA. §13 makes
      contrast the governing rule, so a lightened desk-surface error tone is used.
+   - --line-strong is added. --line is a hairline everywhere else, but the three
+     stock-picker card borders are the click targets themselves, and a boundary
+     WCAG 1.4.11 asks to identify measures 1.43:1. --line-strong reaches 3.27:1
+     while staying quieter than the --ink edge of the selected card.
 --------------------------------------------------------------------------- */
 :root {
   --ink: #16233d;
   --ink-soft: #4a5670;
   --paper: #fafaf7;
   --line: #d8d3c4;
+  --line-strong: #948a74;
 
   --brass: #8a6a34;
   --brass-deep: #6e5527;

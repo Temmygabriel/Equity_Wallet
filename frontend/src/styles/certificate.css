@@ -313,8 +313,11 @@
     padding: 16px;
   }
 
-  .ch .r {
-    display: none;
+  /* The reference is how a bonus is matched to its number, so it wraps onto a
+     second line rather than dropping off the certificate. */
+  .ch {
+    flex-wrap: wrap;
+    gap: 2px 12px;
   }
 
   .amt {
