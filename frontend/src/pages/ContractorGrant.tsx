@@ -6,6 +6,7 @@ import { IconAlert } from "../components/icons";
 import { Notice } from "../components/Notice";
 import { stockLabel } from "../components/StockPicker";
 import type { AccountView } from "../hooks/useAccount";
+import { certAmount, readLocal, MILESTONE_KEY } from "../local";
 
 /* The certificate entrance of §5.1 starts at 200ms and runs 900ms, and §11.1
    wants the on-load stamp to start 500ms after it lands. */
@@ -16,30 +17,6 @@ const DAY_MS = 86_400_000;
 const HOUR_MS = 3_600_000;
 
 const NOT_A_NUMBER = "That isn't a bonus number. Use the number from the link you were sent.";
-
-function readLocal(key: string): string | undefined {
-  try {
-    return window.localStorage.getItem(key) ?? undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-/* The contract stores the stock quantity, not the USDG amount, so a dollar
-   figure is only shown when this browser recorded one at funding time (§3.2).
-   It is never invented. */
-function dollarLabel(raw: string): string | undefined {
-  const value = Number(raw);
-  if (raw.trim() === "" || !Number.isFinite(value) || value <= 0) return undefined;
-  const rounded = value % 1 === 0 ? value.toFixed(0) : value.toFixed(2);
-  return `$${Number(rounded).toLocaleString("en-US")}`;
-}
-
-function quantityLabel(raw: string): string {
-  const value = Number(raw);
-  if (!Number.isFinite(value)) return raw;
-  return value.toLocaleString("en-US", { maximumFractionDigits: 2 });
-}
 
 /* Read from the onchain deadline, computed at render. There is no ticking
    timer, and never a count of seconds (§11.2). */
@@ -141,15 +118,14 @@ export function ContractorGrant({ header, grantId, account, navigate }: Contract
         ? "claimed"
         : "released";
 
-  const storedUsdg = grantId ? readLocal(`ebw.usdg.${grantId}`) : undefined;
-  const storedMilestone = grantId ? readLocal(`ebw.milestone.${grantId}`) : undefined;
+  const storedMilestone = grantId ? readLocal(MILESTONE_KEY(grantId)) : undefined;
   const milestone = storedMilestone ?? (grant && !grant.milestone.startsWith("Not stored") ? grant.milestone : undefined);
 
-  const dollars = storedUsdg ? dollarLabel(storedUsdg) : undefined;
-  const amount = grant ? (dollars ?? quantityLabel(grant.stockAmount)) : "$0";
-  /* Without a recorded dollar amount the figure is a token quantity, so the
+  /* Without a recorded dollar amount the figure is a token quantity, and the
      sub-line drops the "in … stock" phrasing (§3.2). */
-  const subLine = grant && !dollars ? `${stockLabel(grant.stock)} stock` : undefined;
+  const money = grant ? certAmount(grantId, grant.stockAmount, stockLabel(grant.stock)) : undefined;
+  const amount = money?.amount ?? "$0";
+  const subLine = money?.subLine;
 
   const deliveredTo =
     grant?.releasedBy === "timeout"

@@ -659,3 +659,153 @@
   }
 }
 
+/* ---------------------------------------------------------------------------
+   Employer: the register (§9). A lookup, then a list of ruled strips. Each row
+   is a strip of the certificate, not a card, and the whole row is the link.
+--------------------------------------------------------------------------- */
+
+.register {
+  padding: 56px 0 96px;
+}
+
+.register-head h1 {
+  font-size: 40px;
+  line-height: 1.15;
+}
+
+.register-head p {
+  max-width: 620px;
+  margin-top: 14px;
+  color: var(--ink-soft);
+}
+
+.register-lookup {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  margin-top: 40px;
+  padding-top: 28px;
+  border-top: 1px solid var(--line);
+}
+
+.register-lookup .field {
+  flex: 0 1 280px;
+}
+
+.register-list {
+  margin-top: 56px;
+}
+
+.register-list h2 {
+  font-size: 22px;
+}
+
+.strips {
+  margin-top: 20px;
+  list-style: none;
+  border-top: 1px solid var(--line);
+}
+
+.strip {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 24px;
+  width: 100%;
+  padding: 18px 4px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+
+.strip:hover {
+  opacity: 0.85;
+}
+
+.strip-lead {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.strip-amount {
+  font-family: Fraunces, Georgia, serif;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Waiting on the chain: the figure is not there yet, so the row says so in
+   plain type rather than showing a number that might be wrong. */
+.strip.is-reading .strip-amount {
+  font-family: inherit;
+  font-size: 14px;
+  letter-spacing: normal;
+  color: var(--ink-soft);
+}
+
+.strip-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.strip-tail {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.strip-status {
+  font-size: 13px;
+}
+
+.strip-ref {
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.register-cap {
+  max-width: 620px;
+  margin-top: 20px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+/* An invitation, not an apology. */
+.register-empty {
+  margin-top: 20px;
+  max-width: 620px;
+  font-size: 15px;
+  color: var(--ink-soft);
+}
+
+@media (max-width: 480px) {
+  .register {
+    padding: 40px 0 72px;
+  }
+
+  .register-lookup {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .register-lookup .field {
+    flex: none;
+  }
+
+  .strip {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .strip-tail {
+    align-items: flex-start;
+  }
+}
+

@@ -3,6 +3,7 @@ import { chainAdapter } from "../chainAdapter";
 import { Certificate, type CertState } from "../components/Certificate";
 import { IconAlert, IconCalendar, IconCheck, IconCopy } from "../components/icons";
 import { StockPicker, stockLabel, type StockTicker } from "../components/StockPicker";
+import { appendToRegister, dollarLabel, MILESTONE_KEY, USDG_KEY, writeLocal } from "../local";
 
 /* Required strings (§8.1, §8.5). No first person, no "please", one sentence. */
 const ADDRESS_ERROR = "That address isn't valid. Paste the full 0x address.";
@@ -14,28 +15,6 @@ const CHAIN_ERROR = "Switch your wallet to Robinhood Chain Testnet (46630).";
 const ADDRESS_PATTERN = /^0x[a-fA-F0-9]{40}$/;
 
 const STAGES = ["Creating the agreement", "Approving USDG", "Locking the bonus"];
-
-/* The storage keys §8.4 writes, and the register in §9 reads back. */
-const MINE_KEY = "ebw.mine";
-
-function store(key: string, value: string) {
-  try {
-    window.localStorage.setItem(key, value);
-  } catch {
-    /* Storage may be unavailable; the bonus is still on chain. */
-  }
-}
-
-function appendToRegister(id: string) {
-  try {
-    const stored: unknown = JSON.parse(window.localStorage.getItem(MINE_KEY) ?? "[]");
-    const ids = Array.isArray(stored) ? stored.filter((value): value is string => typeof value === "string") : [];
-    if (!ids.includes(id)) ids.push(id);
-    window.localStorage.setItem(MINE_KEY, JSON.stringify(ids));
-  } catch {
-    /* Storage may be unavailable; the register just stays empty. */
-  }
-}
 
 function shortAddress(address: string): string {
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
@@ -52,10 +31,7 @@ async function copyText(value: string): Promise<boolean> {
 }
 
 function formatAmount(raw: string): string {
-  const value = Number(raw);
-  if (raw.trim() === "" || !Number.isFinite(value) || value <= 0) return "$0";
-  const rounded = value % 1 === 0 ? value.toFixed(0) : value.toFixed(2);
-  return `$${Number(rounded).toLocaleString("en-US")}`;
+  return dollarLabel(raw) ?? "$0";
 }
 
 function longDate(iso: string): string {
@@ -142,8 +118,8 @@ export function EmployerFund({ navigate }: { navigate: (to: string) => void }) {
         (next) => setStage(next)
       );
       const raw = id.toString();
-      store(`ebw.usdg.${raw}`, amount);
-      store(`ebw.milestone.${raw}`, milestone.trim());
+      writeLocal(USDG_KEY(raw), amount);
+      writeLocal(MILESTONE_KEY(raw), milestone.trim());
       appendToRegister(raw);
       setFundedId(raw);
       setStep("done");
