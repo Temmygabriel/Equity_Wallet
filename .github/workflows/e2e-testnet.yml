@@ -1,0 +1,89 @@
+# Runs the two-wallet end-to-end flow against the deployed testnet demo.
+#
+# Manual dispatch only. This spends testnet ETH from two funded keys, so it must
+# never run on push or pull_request.
+#
+# Required repository secrets:
+#   DEPLOYER_PRIVATE_KEY    employer wallet (the deployer)
+#   CONTRACTOR_PRIVATE_KEY  contractor wallet (the funded second account)
+#
+# It deploys nothing. It exercises both payout paths against contracts that are
+# already deployed, so it answers the question the Hardhat suite cannot: do the
+# *deployed* contracts behave the way the tests say they do, with two accounts.
+
+name: End-to-end two-wallet test
+
+on:
+  workflow_dispatch:
+    inputs:
+      grant_escrow_address:
+        description: GrantEscrow address to test against
+        required: true
+        default: "0x339a44f967dD1eD1bDBa98Fb4396DaB77e4D3645"
+      usdg_address:
+        description: MockUSDG address
+        required: true
+        default: "0x308b3d480199ACcD21c8BE882A5E9F3077D0EaAC"
+      aapl_address:
+        description: Mock AAPL address
+        required: true
+        default: "0x17078672b60471957f42A0343d510B1a4e81DC59"
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    env:
+      RH_RPC_URL: https://rpc.testnet.chain.robinhood.com
+      DEPLOYER_PRIVATE_KEY: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
+      CONTRACTOR_PRIVATE_KEY: ${{ secrets.CONTRACTOR_PRIVATE_KEY }}
+      GRANT_ESCROW_ADDRESS: ${{ inputs.grant_escrow_address }}
+      USDG_ADDRESS: ${{ inputs.usdg_address }}
+      AAPL_ADDRESS: ${{ inputs.aapl_address }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Check both keys are present
+        run: |
+          if [ -z "$DEPLOYER_PRIVATE_KEY" ]; then
+            echo "::error::DEPLOYER_PRIVATE_KEY is not set. Add it under Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
+          if [ -z "$CONTRACTOR_PRIVATE_KEY" ]; then
+            echo "::error::CONTRACTOR_PRIVATE_KEY is not set. The two-wallet test needs a second funded account."
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Compile contracts
+        run: npm run compile
+
+      # Never enable shell tracing here: it would print both keys.
+      - name: Run the two-wallet flow
+        run: npm run e2e:testnet --workspace contracts | tee e2e.log
+
+      # Runs even on failure, so a failing check still reaches the summary.
+      - name: Publish the results
+        if: always()
+        run: |
+          {
+            echo "## Two-wallet end-to-end test"
+            echo
+            if [ -s e2e.log ]; then
+              echo '```'
+              cat e2e.log
+              echo '```'
+            else
+              echo "No output was produced."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

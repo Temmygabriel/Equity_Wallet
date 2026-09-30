@@ -6,6 +6,7 @@
     "compile": "hardhat compile",
     "deploy:demo:testnet": "hardhat run scripts/deploy-testnet-demo.ts --network robinhoodTestnet",
     "deploy:testnet": "hardhat run scripts/deploy-grant-escrow.ts --network robinhoodTestnet",
+    "e2e:testnet": "hardhat run scripts/e2e-two-wallet.ts --network robinhoodTestnet",
     "test": "hardhat test",
     "typecheck": "tsc --noEmit"
   },
