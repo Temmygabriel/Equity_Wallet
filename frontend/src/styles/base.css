@@ -91,6 +91,12 @@ textarea {
   margin: 0 auto;
 }
 
+/* What sits behind the jurisdiction gate: chrome and an empty surface, so no
+   gated content is ever rendered under the backdrop (spec §6A.3). */
+.surface-blank {
+  min-height: 55svh;
+}
+
 /* --- Controls ------------------------------------------------------------ */
 
 .btn {

@@ -1,0 +1,192 @@
+/* ---------------------------------------------------------------------------
+   Forms. The shared field treatment, the jurisdiction gate sheet, and the
+   employer form document (checkpoint 4).
+--------------------------------------------------------------------------- */
+
+/* --- Fields -------------------------------------------------------------- */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.field > label {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  border-radius: var(--radius);
+}
+
+.field textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.field-note {
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.field-error {
+  font-size: 13px;
+  color: var(--red-soft);
+}
+
+/* --- Jurisdiction gate (§6A) --------------------------------------------- */
+
+/* The backdrop is its own layer, so dimming it to 80% cannot dim the sheet. */
+.gate {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.gate-backdrop {
+  position: absolute;
+  inset: 0;
+  background: var(--desk);
+  opacity: 0;
+  animation: gateBackdropIn 0.2s var(--ease-out) forwards;
+}
+
+@keyframes gateBackdropIn {
+  to {
+    opacity: 0.8;
+  }
+}
+
+.gate.is-leaving .gate-backdrop {
+  animation: gateBackdropOut 0.2s var(--ease-out) forwards;
+}
+
+@keyframes gateBackdropOut {
+  from {
+    opacity: 0.8;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Square, flat, no shadow — the sheet is paper on the desk, not a floating card. */
+.gate-sheet {
+  position: relative;
+  width: 100%;
+  max-width: 460px;
+  padding: 36px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  animation: gateSheetIn 0.3s var(--ease-out) 0.08s both;
+}
+
+@keyframes gateSheetIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.gate.is-leaving .gate-sheet {
+  animation: gateSheetOut 0.2s var(--ease-out) forwards;
+}
+
+@keyframes gateSheetOut {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+
+/* Asking and blocked crossfade in 200ms. */
+.gate-body {
+  animation: gateSwap 0.2s var(--ease-out);
+}
+
+@keyframes gateSwap {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.gate-body h2 {
+  font-size: 26px;
+  line-height: 1.25;
+}
+
+.gate-copy {
+  margin-top: 12px;
+  font-size: 15px;
+  color: var(--ink-soft);
+}
+
+.gate-body .field {
+  margin-top: 22px;
+}
+
+.gate-helper {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.gate-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  margin-top: 24px;
+}
+
+/* The confirm button is never greyed out; before a choice it simply does
+   nothing. */
+.gate-actions .btn[aria-disabled="true"] {
+  cursor: default;
+}
+
+.gate-label {
+  margin-top: 26px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+@media (max-width: 480px) {
+  .gate {
+    align-items: end;
+    padding: 0;
+  }
+
+  .gate-sheet {
+    max-width: none;
+    padding: 24px;
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+  }
+}

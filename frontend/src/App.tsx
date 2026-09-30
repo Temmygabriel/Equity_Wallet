@@ -1,7 +1,10 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { DeskShell } from "./components/DeskShell";
 import { Footer } from "./components/Footer";
 import { Header } from "./components/Header";
+import { JurisdictionGate } from "./components/JurisdictionGate";
 import { useAccount } from "./hooks/useAccount";
+import { useJurisdiction } from "./hooks/useJurisdiction";
 import { CertGallery } from "./pages/CertGallery";
 import { ContractorGrant } from "./pages/ContractorGrant";
 import { EmployerFund } from "./pages/EmployerFund";
@@ -40,21 +43,69 @@ function useLocation(): [Location, (to: string) => void] {
 export function App() {
   const [location, navigate] = useLocation();
   const account = useAccount();
+  const jurisdiction = useJurisdiction();
+  const backgroundRef = useRef<HTMLDivElement>(null);
+
   const surface = surfaceFor(location.route);
   const header = <Header surface={surface} navigate={navigate} account={account} />;
+  const gated = GATED_ROUTES.includes(location.route);
 
-  /* Desk routes place the header inside their own full-viewport surface. */
-  if (location.route === "/") return <Landing navigate={navigate} header={header} />;
-  if (location.route === "/contractor/grant")
-    return <ContractorGrant header={header} grantId={location.id} account={account} />;
+  /* The gate is checked here, once, rather than in each page. While it is open
+     the background carries no route content and is inert, so nothing behind it
+     can be read or tabbed into. */
+  const gateOpen = gated && jurisdiction.status !== "passed";
+
+  useEffect(() => {
+    const node = backgroundRef.current;
+    if (!node) return;
+    if (gateOpen) node.setAttribute("inert", "");
+    else node.removeAttribute("inert");
+  }, [gateOpen]);
+
+  const goHome = useCallback(() => navigate("/"), [navigate]);
+
+  let content: ReactNode;
+  if (location.route === "/") {
+    content = <Landing navigate={navigate} header={header} />;
+  } else if (location.route === "/contractor/grant") {
+    /* A desk route carries its own header inside the desk surface. */
+    content = gateOpen ? (
+      <DeskShell header={header}>
+        <main className="surface-blank" />
+      </DeskShell>
+    ) : (
+      <ContractorGrant header={header} grantId={location.id} account={account} />
+    );
+  } else {
+    content = (
+      <>
+        {header}
+        {gateOpen ? (
+          <main className="surface-blank" />
+        ) : location.route === "/employer/fund" ? (
+          <EmployerFund navigate={navigate} />
+        ) : location.route === "/employer/grants" ? (
+          <EmployerGrants navigate={navigate} />
+        ) : (
+          <CertGallery />
+        )}
+        <Footer gated={gated} />
+      </>
+    );
+  }
 
   return (
     <>
-      {header}
-      {location.route === "/employer/fund" && <EmployerFund navigate={navigate} />}
-      {location.route === "/employer/grants" && <EmployerGrants navigate={navigate} />}
-      {location.route === "/__cert" && <CertGallery />}
-      <Footer gated={GATED_ROUTES.includes(location.route)} />
+      <div ref={backgroundRef}>{content}</div>
+      {gateOpen && (
+        <JurisdictionGate
+          status={jurisdiction.status}
+          region={jurisdiction.region}
+          onChoose={jurisdiction.choose}
+          onReset={jurisdiction.reset}
+          onHome={goHome}
+        />
+      )}
     </>
   );
 }

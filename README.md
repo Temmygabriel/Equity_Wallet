@@ -67,6 +67,16 @@ This is the supported Robinhood Chain **testnet** demonstration. It deploys mock
 
 The mock adapter converts USDG to the selected mock stock deterministically at a 1:1 18-decimal rate unless changed for a test. It enforces `minStockOut`; no 0x route is involved.
 
+## Jurisdiction gate
+
+The three app routes (`/employer/fund`, `/employer/grants`, `/contractor/grant`) open a jurisdiction gate before any of their content is rendered. The landing page is ungated.
+
+**It is a demo-only restriction. It is not a compliance control and it verifies nothing.** It runs entirely in the browser, checks the answer against a constant in the source, and sends nothing anywhere. Every screen it appears on says so, and the footer on a gated page repeats it.
+
+- The region list and the blocked list are illustrative placeholders in `frontend/src/config/jurisdiction.ts`. They are not legal advice, not a sanctions list, and not a real eligibility list. **The project owner must replace them, or remove the gate, before any real use.**
+- Passing the gate is remembered in `sessionStorage` under `ebw.jurisdiction`, so it is asked once per browser session. A blocked choice is never stored: a reload asks again.
+- If `sessionStorage` is unavailable, the gate simply re-asks; nothing else changes.
+
 ## Scope of this scaffold
 
 The frontend supports only the configured Robinhood Chain testnet mock contracts through an EIP-1193 wallet. It intentionally includes no production swap integration, mainnet deployment, real securities/token addresses, backend, or authentication.
