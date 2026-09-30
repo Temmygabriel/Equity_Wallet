@@ -1,0 +1,75 @@
+# Deploys the Robinhood Chain testnet demo contracts.
+#
+# Manual dispatch only. This spends testnet ETH from a funded key, so it must
+# never run on push or pull_request. It also has to live on the default branch:
+# GitHub only lists a workflow_dispatch workflow in the Actions UI when the file
+# is present on the default branch.
+#
+# Required repository secret: DEPLOYER_PRIVATE_KEY
+#   Settings -> Secrets and variables -> Actions -> New repository secret
+#
+# The demo deployment is self-contained: it deploys MockUSDG, mock AAPL/TSLA/
+# NVDA, MockSwapAdapter and GrantEscrow, then mints 100,000 mock USDG to the
+# deployer. No official testnet token addresses are needed.
+
+name: Deploy testnet demo
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      RH_RPC_URL: https://rpc.testnet.chain.robinhood.com
+      DEPLOYER_PRIVATE_KEY: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # Fail here, with a readable message, rather than inside Hardhat.
+      - name: Check the deployer key is present
+        run: |
+          if [ -z "$DEPLOYER_PRIVATE_KEY" ]; then
+            echo "::error::DEPLOYER_PRIVATE_KEY is not set. Add it under Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Compile contracts
+        run: npm run compile
+
+      # tee so the addresses survive into the summary below. Never enable shell
+      # tracing here: it would print the key.
+      - name: Deploy the testnet demo
+        run: npm run deploy:demo:testnet --workspace contracts | tee deploy.log
+
+      # Runs even when the deploy fails, so a partial failure still shows its
+      # error in the summary.
+      - name: Publish the deployed addresses
+        if: always()
+        run: |
+          {
+            echo "## Robinhood Chain testnet demo"
+            echo
+            echo "Chain ID 46630. Copy the \`VITE_*\` lines into the Vercel project's"
+            echo "environment variables. They are public addresses, not secrets."
+            echo
+            if [ -s deploy.log ]; then
+              echo '```'
+              cat deploy.log
+              echo '```'
+            else
+              echo "No deploy output was produced."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
