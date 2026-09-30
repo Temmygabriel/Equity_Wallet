@@ -37,11 +37,17 @@ describe("GrantEscrow", function () {
     return { grantId: 0n, deadline: actualDeadline };
   }
 
+  /* Rule 9 requires the swap to carry a transaction deadline. The escrow takes it from the
+     caller, so tests pass a real future timestamp rather than a placeholder. */
+  async function swapDeadline() {
+    return BigInt(await time.latest()) + 600n;
+  }
+
   async function fundAapl(fixture: Awaited<ReturnType<typeof deployFixture>>) {
     const { grantId, deadline } = await createGrant(fixture);
     await fixture.escrow
       .connect(fixture.employer)
-      .fundGrant(grantId, USDG_AMOUNT, await fixture.aapl.getAddress(), STOCK_AMOUNT);
+      .fundGrant(grantId, USDG_AMOUNT, await fixture.aapl.getAddress(), STOCK_AMOUNT, await swapDeadline());
     return { grantId, deadline };
   }
 
@@ -67,14 +73,14 @@ describe("GrantEscrow", function () {
   it("allows only the employer to fund", async function () {
     const fixture = await deployFixture();
     await createGrant(fixture);
-    await expect(fixture.escrow.connect(fixture.outsider).fundGrant(0, USDG_AMOUNT, await fixture.aapl.getAddress(), STOCK_AMOUNT))
+    await expect(fixture.escrow.connect(fixture.outsider).fundGrant(0, USDG_AMOUNT, await fixture.aapl.getAddress(), STOCK_AMOUNT, await swapDeadline()))
       .to.be.revertedWith("GrantEscrow: only employer");
   });
 
   it("rejects stock tokens outside the explicit allowlist", async function () {
     const fixture = await deployFixture();
     await createGrant(fixture);
-    await expect(fixture.escrow.connect(fixture.employer).fundGrant(0, USDG_AMOUNT, await fixture.unsupported.getAddress(), STOCK_AMOUNT))
+    await expect(fixture.escrow.connect(fixture.employer).fundGrant(0, USDG_AMOUNT, await fixture.unsupported.getAddress(), STOCK_AMOUNT, await swapDeadline()))
       .to.be.revertedWith("GrantEscrow: unsupported stock token");
   });
 
@@ -94,8 +100,38 @@ describe("GrantEscrow", function () {
     const fixture = await deployFixture();
     await createGrant(fixture);
     await fixture.adapter.setOutputAmount(STOCK_AMOUNT - 1n);
-    await expect(fixture.escrow.connect(fixture.employer).fundGrant(0, USDG_AMOUNT, await fixture.aapl.getAddress(), STOCK_AMOUNT))
+    await expect(fixture.escrow.connect(fixture.employer).fundGrant(0, USDG_AMOUNT, await fixture.aapl.getAddress(), STOCK_AMOUNT, await swapDeadline()))
       .to.be.revertedWith("MockSwapAdapter: insufficient output");
+  });
+
+  /* Build Spec §4 rule 9. A zero floor passes `rawEscrowAmount >= minStockOut` for any output,
+     so it must be rejected before the swap rather than silently accepted. */
+  it("rejects a zero minStockOut", async function () {
+    const fixture = await deployFixture();
+    await createGrant(fixture);
+    await expect(fixture.escrow.connect(fixture.employer).fundGrant(0, USDG_AMOUNT, await fixture.aapl.getAddress(), 0n, await swapDeadline()))
+      .to.be.revertedWith("GrantEscrow: zero minStockOut");
+  });
+
+  it("rejects a swap deadline that has already passed", async function () {
+    const fixture = await deployFixture();
+    await createGrant(fixture);
+    await expect(fixture.escrow.connect(fixture.employer).fundGrant(0, USDG_AMOUNT, await fixture.aapl.getAddress(), STOCK_AMOUNT, BigInt(await time.latest()) - 1n))
+      .to.be.revertedWith("GrantEscrow: swap deadline passed");
+  });
+
+  /* The escrow's own check makes the adapter's guard unreachable through fundGrant, so this
+     exercises the adapter directly — otherwise the deadline plumbing would be asserted only
+     at the call site and never at the boundary that is supposed to honour it. */
+  it("stops the adapter executing a swap past its deadline", async function () {
+    const fixture = await deployFixture();
+    const deadline = await swapDeadline();
+    await fixture.usdg.connect(fixture.employer).approve(await fixture.adapter.getAddress(), USDG_AMOUNT);
+    await time.increaseTo(deadline + 1n);
+
+    await expect(
+      fixture.adapter.connect(fixture.employer).swap(await fixture.usdg.getAddress(), await fixture.aapl.getAddress(), USDG_AMOUNT, STOCK_AMOUNT, deadline)
+    ).to.be.revertedWith("MockSwapAdapter: swap expired");
   });
 
   it("uses the mock adapter's deterministic configured rate", async function () {
@@ -103,7 +139,7 @@ describe("GrantEscrow", function () {
     await createGrant(fixture);
     await fixture.adapter.setRate(ethers.parseUnits("1", 18));
 
-    await fixture.escrow.connect(fixture.employer).fundGrant(0, USDG_AMOUNT, await fixture.aapl.getAddress(), USDG_AMOUNT);
+    await fixture.escrow.connect(fixture.employer).fundGrant(0, USDG_AMOUNT, await fixture.aapl.getAddress(), USDG_AMOUNT, await swapDeadline());
 
     expect((await fixture.escrow.grants(0)).rawEscrowAmount).to.equal(USDG_AMOUNT);
   });
@@ -185,7 +221,7 @@ describe("GrantEscrow", function () {
       .map((fragment) => (fragment as { name: string }).name);
     expect(functionNames).to.not.include("cancelGrant");
     expect(functionNames).to.not.include("setGrantDeadline");
-    await expect(fixture.escrow.connect(fixture.employer).fundGrant(grantId, USDG_AMOUNT, await fixture.tsla.getAddress(), STOCK_AMOUNT))
+    await expect(fixture.escrow.connect(fixture.employer).fundGrant(grantId, USDG_AMOUNT, await fixture.tsla.getAddress(), STOCK_AMOUNT, await swapDeadline()))
       .to.be.revertedWith("GrantEscrow: grant not created");
 
     const grantAfterFailedMutation = await fixture.escrow.grants(grantId);
@@ -196,7 +232,7 @@ describe("GrantEscrow", function () {
   it("blocks reentrancy during employer release while preserving the payout", async function () {
     const fixture = await deployFixture(true);
     const { deadline } = await createGrant(fixture);
-    await fixture.escrow.connect(fixture.employer).fundGrant(0, USDG_AMOUNT, await fixture.aapl.getAddress(), STOCK_AMOUNT);
+    await fixture.escrow.connect(fixture.employer).fundGrant(0, USDG_AMOUNT, await fixture.aapl.getAddress(), STOCK_AMOUNT, await swapDeadline());
     const payload = fixture.escrow.interface.encodeFunctionData("releaseGrant", [0]);
     await fixture.aapl.configureReentry(await fixture.escrow.getAddress(), payload);
 
@@ -211,7 +247,7 @@ describe("GrantEscrow", function () {
   it("blocks reentrancy during timeout claim while preserving the contractor payout", async function () {
     const fixture = await deployFixture(true);
     const { deadline } = await createGrant(fixture);
-    await fixture.escrow.connect(fixture.employer).fundGrant(0, USDG_AMOUNT, await fixture.aapl.getAddress(), STOCK_AMOUNT);
+    await fixture.escrow.connect(fixture.employer).fundGrant(0, USDG_AMOUNT, await fixture.aapl.getAddress(), STOCK_AMOUNT, await swapDeadline());
     const payload = fixture.escrow.interface.encodeFunctionData("claimAfterTimeout", [0]);
     await fixture.aapl.configureReentry(await fixture.escrow.getAddress(), payload);
     await time.increaseTo(deadline);

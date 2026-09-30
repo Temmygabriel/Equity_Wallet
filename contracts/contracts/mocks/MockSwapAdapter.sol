@@ -25,7 +25,10 @@ contract MockSwapAdapter is ISwapAdapter {
         useFixedOutput = false;
     }
 
-    function swap(address tokenIn, address tokenOut, uint256 amountIn, uint256 minAmountOut) external returns (uint256 amountOut) {
+    function swap(address tokenIn, address tokenOut, uint256 amountIn, uint256 minAmountOut, uint256 deadline) external returns (uint256 amountOut) {
+        // The mock honours the caller's deadline so the escrow's deadline plumbing is exercised
+        // rather than assumed. A real router enforces this itself.
+        require(block.timestamp <= deadline, "MockSwapAdapter: swap expired");
         amountOut = useFixedOutput ? outputAmount : (amountIn * rate) / 1e18;
         require(amountOut >= minAmountOut, "MockSwapAdapter: insufficient output");
         IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), amountIn);

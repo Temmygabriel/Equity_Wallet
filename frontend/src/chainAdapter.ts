@@ -21,7 +21,7 @@ const robinhoodTestnet = {
 
 const grantEscrowAbi = [
   { type: "function", name: "createGrant", stateMutability: "nonpayable", inputs: [{ name: "contractor", type: "address" }, { name: "deadline", type: "uint256" }], outputs: [{ name: "grantId", type: "uint256" }] },
-  { type: "function", name: "fundGrant", stateMutability: "nonpayable", inputs: [{ name: "grantId", type: "uint256" }, { name: "usdgAmount", type: "uint256" }, { name: "selectedToken", type: "address" }, { name: "minStockOut", type: "uint256" }], outputs: [] },
+  { type: "function", name: "fundGrant", stateMutability: "nonpayable", inputs: [{ name: "grantId", type: "uint256" }, { name: "usdgAmount", type: "uint256" }, { name: "selectedToken", type: "address" }, { name: "minStockOut", type: "uint256" }, { name: "swapDeadline", type: "uint256" }], outputs: [] },
   { type: "function", name: "releaseGrant", stateMutability: "nonpayable", inputs: [{ name: "grantId", type: "uint256" }], outputs: [] },
   { type: "function", name: "claimAfterTimeout", stateMutability: "nonpayable", inputs: [{ name: "grantId", type: "uint256" }], outputs: [] },
   { type: "function", name: "grants", stateMutability: "view", inputs: [{ name: "grantId", type: "uint256" }], outputs: [{ name: "employer", type: "address" }, { name: "contractor", type: "address" }, { name: "selectedToken", type: "address" }, { name: "rawEscrowAmount", type: "uint256" }, { name: "fundingMultiplier", type: "uint256" }, { name: "deadline", type: "uint256" }, { name: "status", type: "uint8" }] },
@@ -118,6 +118,10 @@ export const chainAdapter = {
     const deadline = BigInt(Math.floor(input.deadline.getTime() / 1000));
     const usdgAmount = parseUnits(input.usdgAmount, 18);
     const minStockOut = parseUnits(input.minStockOut ?? input.usdgAmount, 18);
+    /* Rule 9: the swap carries a transaction deadline so a request left pending in the wallet
+       cannot settle against stale state later. Twenty minutes is the window the demo allows
+       between approving and funding. */
+    const swapDeadline = BigInt(Math.floor(Date.now() / 1000) + 20 * 60);
     onStage?.(1);
     const createHash = await client.writeContract({ address: configured.grantEscrow, abi: grantEscrowAbi, functionName: "createGrant", args: [input.contractor, deadline], account });
     const createReceipt = await publicClient.waitForTransactionReceipt({ hash: createHash });
@@ -127,7 +131,7 @@ export const chainAdapter = {
     const approvalHash = await client.writeContract({ address: configured.usdg, abi: erc20Abi, functionName: "approve", args: [configured.grantEscrow, usdgAmount], account });
     await publicClient.waitForTransactionReceipt({ hash: approvalHash });
     onStage?.(3);
-    const fundHash = await client.writeContract({ address: configured.grantEscrow, abi: grantEscrowAbi, functionName: "fundGrant", args: [grantId, usdgAmount, configured.stocks[input.stock], minStockOut], account });
+    const fundHash = await client.writeContract({ address: configured.grantEscrow, abi: grantEscrowAbi, functionName: "fundGrant", args: [grantId, usdgAmount, configured.stocks[input.stock], minStockOut, swapDeadline], account });
     await publicClient.waitForTransactionReceipt({ hash: fundHash });
     return grantId;
   },

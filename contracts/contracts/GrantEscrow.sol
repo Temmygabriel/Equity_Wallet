@@ -66,18 +66,22 @@ contract GrantEscrow is ReentrancyGuard {
         emit GrantCreated(grantId, msg.sender, contractor, deadline);
     }
 
-    function fundGrant(uint256 grantId, uint256 usdgAmount, address selectedToken, uint256 minStockOut) external {
+    function fundGrant(uint256 grantId, uint256 usdgAmount, address selectedToken, uint256 minStockOut, uint256 swapDeadline) external {
         Grant storage grant = grants[grantId];
         require(msg.sender == grant.employer, "GrantEscrow: only employer");
         require(grant.status == Status.CREATED, "GrantEscrow: grant not created");
         require(usdgAmount > 0, "GrantEscrow: zero funding");
         require(_isSupportedStock(selectedToken), "GrantEscrow: unsupported stock token");
+        // Build Spec §4 rule 9. A zero floor would make the check below vacuous and leave the
+        // employer open to a sandwich on the swap, so it is rejected outright rather than defaulted.
+        require(minStockOut > 0, "GrantEscrow: zero minStockOut");
+        require(swapDeadline >= block.timestamp, "GrantEscrow: swap deadline passed");
 
         usdg.safeTransferFrom(msg.sender, address(this), usdgAmount);
         usdg.forceApprove(address(swapAdapter), usdgAmount);
 
         uint256 stockBalanceBefore = IERC20(selectedToken).balanceOf(address(this));
-        uint256 reportedAmountOut = swapAdapter.swap(address(usdg), selectedToken, usdgAmount, minStockOut);
+        uint256 reportedAmountOut = swapAdapter.swap(address(usdg), selectedToken, usdgAmount, minStockOut, swapDeadline);
         uint256 rawEscrowAmount = IERC20(selectedToken).balanceOf(address(this)) - stockBalanceBefore;
 
         usdg.forceApprove(address(swapAdapter), 0);
