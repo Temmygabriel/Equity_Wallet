@@ -97,7 +97,7 @@ export function Landing({ navigate, header }: { navigate: (to: string) => void; 
             <div className="stop dl">
               <span className="d">The date you set</span>
               <h3>The deadline.</h3>
-              <p>Still not released? The bonus becomes claimable. No lawyer, no dispute.</p>
+              <p>Still not released? The bonus becomes claimable. No waiting on the employer.</p>
             </div>
           </div>
 

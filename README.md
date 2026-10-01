@@ -6,7 +6,7 @@ Equity Benefit Wallet is one contract that holds the bonus until one of two thin
 
 **The employer confirms the work.** One transaction, before the date. The stock goes straight to the contractor's own wallet.
 
-**The deadline passes unreleased.** The bonus becomes claimable by the contractor. One transaction, on or after the date. No lawyer, no dispute.
+**The deadline passes unreleased.** The bonus becomes claimable by the contractor. One transaction, on or after the date. No waiting on the employer.
 
 The employer picks the stock and the deadline up front. The contract holds it. Once funded, nobody can pull it back — there is no cancellation path, no admin override, and no upgrade. What the contractor sees is a certificate showing exactly what is held and when it becomes theirs.
 
