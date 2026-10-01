@@ -398,6 +398,36 @@
   }
 }
 
+/* With the nav gone the header is the brand and the wallet button, and the button is
+   the one that has to stay reachable — it is the only way to connect. The row needs
+   363px at the sizes above, so anything narrower pushed the button past the right edge
+   and `.desk`'s overflow:hidden clipped it: at 390px, the commonest phone width, it was
+   cut in half. The brand is what gives way, and only here. */
+@media (max-width: 430px) {
+  .site-header {
+    gap: 16px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .wordmark {
+    font-size: 17px;
+    gap: 7px;
+  }
+
+  /* Overrides the width/height the Mark component sets, so the ring scales with the
+     type it sits beside rather than staying at its paper size. */
+  .wordmark .mark {
+    width: 19px;
+    height: 19px;
+  }
+
+  .wallet-button {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+}
+
 /* ---------------------------------------------------------------------------
    The payoff screen: the contractor's certificate (§11). The desk centre is
    where the certificate sits, and everything else hangs under it.
