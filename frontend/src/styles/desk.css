@@ -213,19 +213,23 @@
 .hero {
   flex: 1;
   display: grid;
-  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 640px);
   gap: clamp(24px, 4vw, 64px);
   align-items: center;
-  padding: 0 var(--gutter) 56px;
+  padding: 0 var(--gutter) 72px;
 }
 
 .hero h1 {
-  font-size: clamp(40px, 5.6vw, 76px);
+  font-size: clamp(36px, 4.2vw, 56px);
   line-height: 1.04;
   letter-spacing: -0.03em;
 }
 
-.hero h1 .line {
+/* The h1's line spans are `.hl`, not `.line`. They used to share the timeline
+   wrapper's class name, so timeline.css's `margin-top: 64px` landed on every
+   line of the headline and opened a blank band between them. Anything that
+   styles a headline line must key off `.hl`. */
+.hero h1 .hl {
   display: block;
 }
 
@@ -234,15 +238,15 @@
   font-style: italic;
 }
 
-.hero h1 .l1 {
+.hero h1 .hl1 {
   animation: riseIn 0.6s var(--ease-out) 0.08s both;
 }
 
-.hero h1 .l2 {
+.hero h1 .hl2 {
   animation: riseIn 0.6s var(--ease-out) 0.16s both;
 }
 
-.hero h1 .l3 {
+.hero h1 .hl3 {
   animation: riseIn 0.6s var(--ease-out) 0.24s both;
 }
 
@@ -336,14 +340,21 @@
 /* --- Testnet notice ------------------------------------------------------ */
 
 /* Desk pages: quiet, bottom-left, never a banner. */
+/* In flow, as the last child of the desk's flex column, so it sits under the
+   hero instead of on top of the hero's bottom padding. */
 .notice-desk {
-  position: absolute;
-  left: var(--gutter);
-  bottom: 20px;
+  position: static;
   z-index: 2;
   font-size: 12px;
   color: var(--on-desk-mute);
-  max-width: 46ch;
+  padding: 0 var(--gutter) 24px;
+  max-width: none;
+}
+
+@media (min-width: 860px) {
+  .notice-desk {
+    white-space: nowrap;
+  }
 }
 
 /* --- Responsive ---------------------------------------------------------- */

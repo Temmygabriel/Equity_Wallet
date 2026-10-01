@@ -30,9 +30,9 @@ export function Landing({ navigate, header }: { navigate: (to: string) => void; 
         <div className="hero">
           <div>
             <h1>
-              <span className="line l1">Paid in stock.</span>
-              <span className="line l2">Released by the work,</span>
-              <span className="line l3">
+              <span className="hl hl1">Paid in stock.</span>
+              <span className="hl hl2">Released by the work,</span>
+              <span className="hl hl3">
                 <em>or by the calendar.</em>
               </span>
             </h1>
@@ -69,7 +69,7 @@ export function Landing({ navigate, header }: { navigate: (to: string) => void; 
             Every bonus follows the same path. The date is fixed the moment it is funded, and nobody can move it.
           </p>
 
-          <div className={`line${lineIn ? " is-in" : ""}`} ref={lineRef}>
+          <div className={`timeline-track${lineIn ? " is-in" : ""}`} ref={lineRef}>
             <div className="stop">
               <span className="d">Day one</span>
               <h3>Funded and held.</h3>
@@ -81,7 +81,7 @@ export function Landing({ navigate, header }: { navigate: (to: string) => void; 
               <p>The employer confirms, and the stock goes straight to the contractor's own wallet.</p>
             </div>
             <div className="stop dl">
-              <span className="d">15 October</span>
+              <span className="d">The date you set</span>
               <h3>The deadline.</h3>
               <p>Still not released? The bonus becomes claimable. No lawyer, no dispute.</p>
             </div>

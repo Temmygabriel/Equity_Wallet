@@ -22,7 +22,7 @@
 
 /* --- The timeline -------------------------------------------------------- */
 
-.line {
+.timeline-track {
   margin-top: 64px;
   position: relative;
   display: grid;
@@ -35,7 +35,7 @@
    66.667%, so `right: 0` let the rule run on into empty space past the last
    stop. The dots sit at the head of each column, so the line ends where the
    third one is. */
-.line::before {
+.timeline-track::before {
   content: "";
   position: absolute;
   left: 0;
@@ -47,7 +47,7 @@
   transform: scaleX(0);
 }
 
-.line.is-in::before {
+.timeline-track.is-in::before {
   transform: scaleX(1);
   transition: transform 0.9s var(--ease-out);
 }
@@ -75,7 +75,7 @@
 }
 
 /* The deadline stop's dot fills brass last. */
-.line.is-in .stop.dl::before {
+.timeline-track.is-in .stop.dl::before {
   background: var(--brass);
   transition-delay: 1s;
 }
@@ -106,17 +106,17 @@
     transform 0.5s var(--ease-out);
 }
 
-.line.is-in .stop,
+.timeline-track.is-in .stop,
 .fork.is-in > div {
   opacity: 1;
   transform: none;
 }
 
-.line.is-in .stop:nth-child(2) {
+.timeline-track.is-in .stop:nth-child(2) {
   transition-delay: 0.15s;
 }
 
-.line.is-in .stop:nth-child(3) {
+.timeline-track.is-in .stop:nth-child(3) {
   transition-delay: 0.3s;
 }
 
@@ -154,7 +154,7 @@
 
 .trust {
   background: var(--paper);
-  padding: clamp(72px, 9vw, 130px) 0 96px;
+  padding: clamp(56px, 7vw, 96px) 0 96px;
 }
 
 .trust blockquote {
@@ -197,13 +197,13 @@
 /* --- Responsive ---------------------------------------------------------- */
 
 @media (max-width: 860px) {
-  .line,
+  .timeline-track,
   .fork {
     grid-template-columns: 1fr;
   }
 
   /* The baseline becomes a vertical rule on the left, with the dots on it. */
-  .line::before {
+  .timeline-track::before {
     left: 6px;
     right: auto;
     top: 0;
@@ -214,7 +214,7 @@
     transform: scaleY(0);
   }
 
-  .line.is-in::before {
+  .timeline-track.is-in::before {
     transform: scaleY(1);
   }
 
@@ -249,11 +249,11 @@
     transform: none;
   }
 
-  .line::before {
+  .timeline-track::before {
     transform: scaleX(1);
   }
 
-  .line.is-in .stop.dl::before {
+  .timeline-track.is-in .stop.dl::before {
     background: var(--brass);
   }
 }
