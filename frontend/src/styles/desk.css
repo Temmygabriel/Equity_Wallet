@@ -284,6 +284,15 @@
   margin-top: -8px;
 }
 
+/* The caption above says the specimen is not real; this is the way to one that is. They
+   belong to each other, so it sits under the caption rather than joining the hero's calls
+   to action — which also keeps it clear of the testnet notice (§5). */
+.stage-live {
+  margin-top: -10px;
+  font-size: 13px;
+  color: var(--on-desk-soft);
+}
+
 /* The switcher is a segmented control, not a row of separate buttons. */
 .states {
   display: flex;
@@ -433,6 +442,20 @@
 .payoff-quiet {
   font-size: 13px;
   color: var(--on-desk-mute);
+}
+
+/* Evidence for the certificate, not a product surface, so it is quieter than everything
+   near it: no brass, no fill, and the same muted weight as the closing small print (§23). */
+.payoff-onchain {
+  font-size: 13px;
+  color: var(--on-desk-mute);
+  border-bottom: 1px solid rgba(241, 239, 231, 0.25);
+  padding-bottom: 2px;
+}
+
+.payoff-onchain:hover {
+  opacity: 0.85;
+  color: var(--on-desk-soft);
 }
 
 .payoff-actions {

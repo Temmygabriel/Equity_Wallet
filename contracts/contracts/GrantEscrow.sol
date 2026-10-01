@@ -14,15 +14,24 @@ contract GrantEscrow is ReentrancyGuard {
 
     enum Status { CREATED, FUNDED, RELEASED }
 
+    /// @notice The agreement itself lives on chain, not in the employer's browser.
+    /// @dev `milestone` and `fundedUsdgAmount` are what make a contractor link work on a
+    ///      machine that has never seen the employer's session. They are written once, at
+    ///      funding, and there is no function that can write them again.
     struct Grant {
         address employer;
         address contractor;
         address selectedToken;
         uint256 rawEscrowAmount;
+        uint256 fundedUsdgAmount;
         uint256 fundingMultiplier;
         uint256 deadline;
+        string milestone;
         Status status;
     }
+
+    /// @notice Long enough for a sentence describing what "done" means, short enough to store.
+    uint256 public constant MAX_MILESTONE_LENGTH = 280;
 
     IERC20 public immutable usdg;
     ISwapAdapter public immutable swapAdapter;
@@ -34,7 +43,16 @@ contract GrantEscrow is ReentrancyGuard {
     mapping(uint256 grantId => Grant grant) public grants;
 
     event GrantCreated(uint256 indexed grantId, address indexed employer, address indexed contractor, uint256 deadline);
-    event GrantFunded(uint256 indexed grantId, address indexed selectedToken, uint256 rawEscrowAmount, uint256 fundingMultiplier);
+    /* The funded agreement is reconstructable from this event alone, so the employer's
+       grant list can be discovered from chain logs rather than a browser store. */
+    event GrantFunded(
+        uint256 indexed grantId,
+        address indexed selectedToken,
+        uint256 rawEscrowAmount,
+        uint256 fundingMultiplier,
+        uint256 fundedUsdgAmount,
+        string milestone
+    );
     event GrantReleased(uint256 indexed grantId, address indexed contractor, uint256 rawEscrowAmount, bool timeoutClaim);
 
     constructor(address usdg_, address swapAdapter_, address aapl_, address tsla_, address nvda_) {
@@ -59,14 +77,23 @@ contract GrantEscrow is ReentrancyGuard {
             contractor: contractor,
             selectedToken: address(0),
             rawEscrowAmount: 0,
+            fundedUsdgAmount: 0,
             fundingMultiplier: 0,
             deadline: deadline,
+            milestone: "",
             status: Status.CREATED
         });
         emit GrantCreated(grantId, msg.sender, contractor, deadline);
     }
 
-    function fundGrant(uint256 grantId, uint256 usdgAmount, address selectedToken, uint256 minStockOut, uint256 swapDeadline) external {
+    function fundGrant(
+        uint256 grantId,
+        uint256 usdgAmount,
+        address selectedToken,
+        uint256 minStockOut,
+        uint256 swapDeadline,
+        string calldata milestone
+    ) external {
         Grant storage grant = grants[grantId];
         require(msg.sender == grant.employer, "GrantEscrow: only employer");
         require(grant.status == Status.CREATED, "GrantEscrow: grant not created");
@@ -76,6 +103,12 @@ contract GrantEscrow is ReentrancyGuard {
         // employer open to a sandwich on the swap, so it is rejected outright rather than defaulted.
         require(minStockOut > 0, "GrantEscrow: zero minStockOut");
         require(swapDeadline >= block.timestamp, "GrantEscrow: swap deadline passed");
+        /* The milestone is the agreement's subject matter, so an empty one is not a valid
+           grant. The bound is a storage cost, not a security control; 280 characters fits a
+           sentence describing what "done" means. */
+        uint256 milestoneLength = bytes(milestone).length;
+        require(milestoneLength > 0, "GrantEscrow: empty milestone");
+        require(milestoneLength <= MAX_MILESTONE_LENGTH, "GrantEscrow: milestone too long");
 
         usdg.safeTransferFrom(msg.sender, address(this), usdgAmount);
         usdg.forceApprove(address(swapAdapter), usdgAmount);
@@ -89,9 +122,14 @@ contract GrantEscrow is ReentrancyGuard {
 
         grant.selectedToken = selectedToken;
         grant.rawEscrowAmount = rawEscrowAmount;
+        /* Recorded because it is what the employer actually committed, and because the
+           contractor must be able to read the figure without the employer's browser. It is
+           not a live valuation of the stock. */
+        grant.fundedUsdgAmount = usdgAmount;
         grant.fundingMultiplier = IStockTokenMultiplier(selectedToken).uiMultiplier();
+        grant.milestone = milestone;
         grant.status = Status.FUNDED;
-        emit GrantFunded(grantId, selectedToken, rawEscrowAmount, grant.fundingMultiplier);
+        emit GrantFunded(grantId, selectedToken, rawEscrowAmount, grant.fundingMultiplier, usdgAmount, milestone);
     }
 
     function releaseGrant(uint256 grantId) external nonReentrant {

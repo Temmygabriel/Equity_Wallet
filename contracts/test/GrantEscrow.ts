@@ -6,6 +6,7 @@ describe("GrantEscrow", function () {
   const USDG_AMOUNT = ethers.parseUnits("100", 18);
   const STOCK_AMOUNT = ethers.parseUnits("25", 18);
   const MULTIPLIER = 1_000_000n;
+  const MILESTONE = "Shipping the Robinhood Chain integration";
 
   async function deployFixture(reentrantAapl = false) {
     const [employer, contractor, outsider] = await ethers.getSigners();
@@ -47,7 +48,7 @@ describe("GrantEscrow", function () {
     const { grantId, deadline } = await createGrant(fixture);
     await fixture.escrow
       .connect(fixture.employer)
-      .fundGrant(grantId, USDG_AMOUNT, await fixture.aapl.getAddress(), STOCK_AMOUNT, await swapDeadline());
+      .fundGrant(grantId, USDG_AMOUNT, await fixture.aapl.getAddress(), STOCK_AMOUNT, await swapDeadline(), MILESTONE);
     return { grantId, deadline };
   }
 
@@ -73,14 +74,14 @@ describe("GrantEscrow", function () {
   it("allows only the employer to fund", async function () {
     const fixture = await deployFixture();
     await createGrant(fixture);
-    await expect(fixture.escrow.connect(fixture.outsider).fundGrant(0, USDG_AMOUNT, await fixture.aapl.getAddress(), STOCK_AMOUNT, await swapDeadline()))
+    await expect(fixture.escrow.connect(fixture.outsider).fundGrant(0, USDG_AMOUNT, await fixture.aapl.getAddress(), STOCK_AMOUNT, await swapDeadline(), MILESTONE))
       .to.be.revertedWith("GrantEscrow: only employer");
   });
 
   it("rejects stock tokens outside the explicit allowlist", async function () {
     const fixture = await deployFixture();
     await createGrant(fixture);
-    await expect(fixture.escrow.connect(fixture.employer).fundGrant(0, USDG_AMOUNT, await fixture.unsupported.getAddress(), STOCK_AMOUNT, await swapDeadline()))
+    await expect(fixture.escrow.connect(fixture.employer).fundGrant(0, USDG_AMOUNT, await fixture.unsupported.getAddress(), STOCK_AMOUNT, await swapDeadline(), MILESTONE))
       .to.be.revertedWith("GrantEscrow: unsupported stock token");
   });
 
@@ -96,11 +97,125 @@ describe("GrantEscrow", function () {
     expect(await fixture.usdg.allowance(await fixture.escrow.getAddress(), await fixture.adapter.getAddress())).to.equal(0);
   });
 
+  /* The agreement must survive leaving the browser that created it, so both halves of it
+     are written to storage at funding rather than kept alongside the session. */
+  it("stores the funded USDG amount on chain", async function () {
+    const fixture = await deployFixture();
+    const { grantId } = await fundAapl(fixture);
+
+    expect((await fixture.escrow.grants(grantId)).fundedUsdgAmount).to.equal(USDG_AMOUNT);
+  });
+
+  it("stores the milestone on chain", async function () {
+    const fixture = await deployFixture();
+    const { grantId } = await fundAapl(fixture);
+
+    expect((await fixture.escrow.grants(grantId)).milestone).to.equal(MILESTONE);
+  });
+
+  it("rejects an empty milestone", async function () {
+    const fixture = await deployFixture();
+    await createGrant(fixture);
+    await expect(
+      fixture.escrow.connect(fixture.employer).fundGrant(0, USDG_AMOUNT, await fixture.aapl.getAddress(), STOCK_AMOUNT, await swapDeadline(), "")
+    ).to.be.revertedWith("GrantEscrow: empty milestone");
+  });
+
+  it("rejects a milestone above the maximum length", async function () {
+    const fixture = await deployFixture();
+    await createGrant(fixture);
+    const tooLong = "x".repeat(281);
+    await expect(
+      fixture.escrow.connect(fixture.employer).fundGrant(0, USDG_AMOUNT, await fixture.aapl.getAddress(), STOCK_AMOUNT, await swapDeadline(), tooLong)
+    ).to.be.revertedWith("GrantEscrow: milestone too long");
+  });
+
+  it("accepts a milestone exactly at the maximum length", async function () {
+    const fixture = await deployFixture();
+    await createGrant(fixture);
+    const atLimit = "x".repeat(280);
+
+    await fixture.escrow.connect(fixture.employer).fundGrant(0, USDG_AMOUNT, await fixture.aapl.getAddress(), STOCK_AMOUNT, await swapDeadline(), atLimit);
+
+    expect((await fixture.escrow.grants(0)).milestone).to.equal(atLimit);
+  });
+
+  /* Immutability is structural, not a guarded setter: there is no function that writes these
+     fields once the status has left CREATED, and funding cannot run twice. */
+  it("does not let a funded milestone or funded amount be modified", async function () {
+    const fixture = await deployFixture();
+    const { grantId } = await fundAapl(fixture);
+    const funded = await fixture.escrow.grants(grantId);
+
+    await expect(
+      fixture.escrow.connect(fixture.employer).fundGrant(grantId, USDG_AMOUNT, await fixture.tsla.getAddress(), STOCK_AMOUNT, await swapDeadline(), "Something else entirely")
+    ).to.be.revertedWith("GrantEscrow: grant not created");
+
+    const after = await fixture.escrow.grants(grantId);
+    expect(after.milestone).to.equal(funded.milestone);
+    expect(after.fundedUsdgAmount).to.equal(funded.fundedUsdgAmount);
+    expect(after.selectedToken).to.equal(funded.selectedToken);
+    expect(after.rawEscrowAmount).to.equal(funded.rawEscrowAmount);
+  });
+
+  /* The portability property the product promises: a reader that has never held the
+     employer's browser state still recovers the whole agreement. The test holds no local
+     state at all — every field below comes from one contract read. */
+  it("recovers the milestone from chain data alone", async function () {
+    const fixture = await deployFixture();
+    const { grantId } = await fundAapl(fixture);
+
+    const [employer, contractor, selectedToken, , , , , milestone, status] = await fixture.escrow.grants(grantId);
+
+    expect(employer).to.equal(fixture.employer.address);
+    expect(contractor).to.equal(fixture.contractor.address);
+    expect(selectedToken).to.equal(await fixture.aapl.getAddress());
+    expect(milestone).to.equal(MILESTONE);
+    expect(status).to.equal(1);
+  });
+
+  it("recovers the funded USDG amount from chain data alone", async function () {
+    const fixture = await deployFixture();
+    const { grantId } = await fundAapl(fixture);
+
+    const [, , , rawEscrowAmount, fundedUsdgAmount] = await fixture.escrow.grants(grantId);
+
+    expect(fundedUsdgAmount).to.equal(USDG_AMOUNT);
+    expect(rawEscrowAmount).to.equal(STOCK_AMOUNT);
+  });
+
+  /* The employer's list is discovered from this event, so it has to carry the whole
+     agreement and both addresses have to be indexed for the filter to work. */
+  it("emits a GrantFunded event that carries the whole agreement", async function () {
+    const fixture = await deployFixture();
+    const { grantId } = await fundAapl(fixture);
+
+    const events = await fixture.escrow.queryFilter(fixture.escrow.filters.GrantFunded(grantId));
+    expect(events).to.have.length(1);
+    const event = events[0] as typeof events[number] & { args: Record<string, unknown> };
+    expect(event.args.selectedToken).to.equal(await fixture.aapl.getAddress());
+    expect(event.args.rawEscrowAmount).to.equal(STOCK_AMOUNT);
+    expect(event.args.fundingMultiplier).to.equal(MULTIPLIER);
+    expect(event.args.fundedUsdgAmount).to.equal(USDG_AMOUNT);
+    expect(event.args.milestone).to.equal(MILESTONE);
+  });
+
+  it("filters GrantCreated by indexed employer", async function () {
+    const fixture = await deployFixture();
+    await createGrant(fixture);
+
+    const mine = await fixture.escrow.queryFilter(fixture.escrow.filters.GrantCreated(null, fixture.employer.address));
+    const theirs = await fixture.escrow.queryFilter(fixture.escrow.filters.GrantCreated(null, fixture.outsider.address));
+
+    expect(mine).to.have.length(1);
+    expect(theirs).to.have.length(0);
+  });
+
   it("enforces minStockOut", async function () {
     const fixture = await deployFixture();
     await createGrant(fixture);
     await fixture.adapter.setOutputAmount(STOCK_AMOUNT - 1n);
-    await expect(fixture.escrow.connect(fixture.employer).fundGrant(0, USDG_AMOUNT, await fixture.aapl.getAddress(), STOCK_AMOUNT, await swapDeadline()))
+    await expect(fixture.escrow.connect(fixture.employer).fundGrant(0, USDG_AMOUNT, await fixture.aapl.getAddress(), STOCK_AMOUNT, await swapDeadline(), MILESTONE))
       .to.be.revertedWith("MockSwapAdapter: insufficient output");
   });
 
@@ -109,14 +224,14 @@ describe("GrantEscrow", function () {
   it("rejects a zero minStockOut", async function () {
     const fixture = await deployFixture();
     await createGrant(fixture);
-    await expect(fixture.escrow.connect(fixture.employer).fundGrant(0, USDG_AMOUNT, await fixture.aapl.getAddress(), 0n, await swapDeadline()))
+    await expect(fixture.escrow.connect(fixture.employer).fundGrant(0, USDG_AMOUNT, await fixture.aapl.getAddress(), 0n, await swapDeadline(), MILESTONE))
       .to.be.revertedWith("GrantEscrow: zero minStockOut");
   });
 
   it("rejects a swap deadline that has already passed", async function () {
     const fixture = await deployFixture();
     await createGrant(fixture);
-    await expect(fixture.escrow.connect(fixture.employer).fundGrant(0, USDG_AMOUNT, await fixture.aapl.getAddress(), STOCK_AMOUNT, BigInt(await time.latest()) - 1n))
+    await expect(fixture.escrow.connect(fixture.employer).fundGrant(0, USDG_AMOUNT, await fixture.aapl.getAddress(), STOCK_AMOUNT, BigInt(await time.latest()) - 1n, MILESTONE))
       .to.be.revertedWith("GrantEscrow: swap deadline passed");
   });
 
@@ -139,7 +254,7 @@ describe("GrantEscrow", function () {
     await createGrant(fixture);
     await fixture.adapter.setRate(ethers.parseUnits("1", 18));
 
-    await fixture.escrow.connect(fixture.employer).fundGrant(0, USDG_AMOUNT, await fixture.aapl.getAddress(), USDG_AMOUNT, await swapDeadline());
+    await fixture.escrow.connect(fixture.employer).fundGrant(0, USDG_AMOUNT, await fixture.aapl.getAddress(), USDG_AMOUNT, await swapDeadline(), MILESTONE);
 
     expect((await fixture.escrow.grants(0)).rawEscrowAmount).to.equal(USDG_AMOUNT);
   });
@@ -221,7 +336,7 @@ describe("GrantEscrow", function () {
       .map((fragment) => (fragment as { name: string }).name);
     expect(functionNames).to.not.include("cancelGrant");
     expect(functionNames).to.not.include("setGrantDeadline");
-    await expect(fixture.escrow.connect(fixture.employer).fundGrant(grantId, USDG_AMOUNT, await fixture.tsla.getAddress(), STOCK_AMOUNT, await swapDeadline()))
+    await expect(fixture.escrow.connect(fixture.employer).fundGrant(grantId, USDG_AMOUNT, await fixture.tsla.getAddress(), STOCK_AMOUNT, await swapDeadline(), MILESTONE))
       .to.be.revertedWith("GrantEscrow: grant not created");
 
     const grantAfterFailedMutation = await fixture.escrow.grants(grantId);
@@ -232,7 +347,7 @@ describe("GrantEscrow", function () {
   it("blocks reentrancy during employer release while preserving the payout", async function () {
     const fixture = await deployFixture(true);
     const { deadline } = await createGrant(fixture);
-    await fixture.escrow.connect(fixture.employer).fundGrant(0, USDG_AMOUNT, await fixture.aapl.getAddress(), STOCK_AMOUNT, await swapDeadline());
+    await fixture.escrow.connect(fixture.employer).fundGrant(0, USDG_AMOUNT, await fixture.aapl.getAddress(), STOCK_AMOUNT, await swapDeadline(), MILESTONE);
     const payload = fixture.escrow.interface.encodeFunctionData("releaseGrant", [0]);
     await fixture.aapl.configureReentry(await fixture.escrow.getAddress(), payload);
 
@@ -247,7 +362,7 @@ describe("GrantEscrow", function () {
   it("blocks reentrancy during timeout claim while preserving the contractor payout", async function () {
     const fixture = await deployFixture(true);
     const { deadline } = await createGrant(fixture);
-    await fixture.escrow.connect(fixture.employer).fundGrant(0, USDG_AMOUNT, await fixture.aapl.getAddress(), STOCK_AMOUNT, await swapDeadline());
+    await fixture.escrow.connect(fixture.employer).fundGrant(0, USDG_AMOUNT, await fixture.aapl.getAddress(), STOCK_AMOUNT, await swapDeadline(), MILESTONE);
     const payload = fixture.escrow.interface.encodeFunctionData("claimAfterTimeout", [0]);
     await fixture.aapl.configureReentry(await fixture.escrow.getAddress(), payload);
     await time.increaseTo(deadline);

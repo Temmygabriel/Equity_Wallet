@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { judgeGrantId } from "../chainAdapter";
 import { Certificate } from "../components/Certificate";
 import { DeskShell } from "../components/DeskShell";
 import { Footer } from "../components/Footer";
@@ -23,6 +24,10 @@ export function Landing({ navigate, header }: { navigate: (to: string) => void; 
   const [lineRef, lineIn] = useInView<HTMLDivElement>();
   const [forkRef, forkIn] = useInView<HTMLDivElement>();
   const [trustRef, trustIn] = useInView<HTMLElement>();
+  /* The certificate above is a specimen. This is a real one, funded on testnet, so the
+     claim can be checked rather than taken on faith. It is read from chain, needs no
+     wallet, and is simply absent when the deployment has not set the number. */
+  const liveGrant = judgeGrantId();
 
   return (
     <>
@@ -56,6 +61,15 @@ export function Landing({ navigate, header }: { navigate: (to: string) => void; 
             <Certificate state={preview} {...SPECIMEN} />
             <StateSwitcher value={preview} onChange={setPreview} />
             <p className="specimen-cap">A specimen. Nothing here is issued.</p>
+            {liveGrant && (
+              <button
+                className="lnk stage-live"
+                type="button"
+                onClick={() => navigate(`/contractor/grant?id=${liveGrant}`)}
+              >
+                View a live testnet certificate
+              </button>
+            )}
           </div>
         </div>
 

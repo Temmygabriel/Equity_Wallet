@@ -1,7 +1,8 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { chainAdapter, type DemoGrant } from "../chainAdapter";
 import { stockLabel } from "../components/StockPicker";
-import { certAmount, readRegister } from "../local";
+import type { AccountView } from "../hooks/useAccount";
+import { certAmount } from "../amount";
 
 /* A row is either read, still being read, or unreadable. There is no fourth
    state, and a row that says "Reading…" forever is a bug (§9). */
@@ -11,17 +12,50 @@ function statusText(grant: DemoGrant): string {
   return grant.state === "LOCKED" ? "Held by the contract" : "Unlocked";
 }
 
-export function EmployerGrants({ navigate }: { navigate: (to: string) => void }) {
+export function EmployerGrants({ navigate, account }: { navigate: (to: string) => void; account: AccountView }) {
   const [entry, setEntry] = useState("");
-  /* Read once, lazily, so the list is on screen on first paint. */
-  const [ids] = useState<string[]>(readRegister);
+  /* undefined means "still being read from the chain". */
+  const [ids, setIds] = useState<bigint[]>();
   const [rows, setRows] = useState<Record<string, Row>>({});
+  const [listError, setListError] = useState<string>();
 
-  /* Status comes from the chain, so it is fetched lazily, one grant at a time.
-     The contract cannot list grants by employer, which is why this list is the
-     browser's own record and not a contract query. */
+  const address = account.address;
+
+  /* The list is discovered from GrantCreated logs filtered by the connected account. It used
+     to be a register this browser kept, which meant an employer who cleared site data, or
+     signed in from another machine, saw an empty page for bonuses that were plainly on
+     chain. The contract cannot enumerate grants by employer, but `employer` is indexed, so
+     the logs answer the same question and no backend is needed to do it. */
   useEffect(() => {
-    const pending = ids.filter((id) => /^\d+$/.test(id) && !(id in rows));
+    setRows({});
+    if (!address) {
+      setIds([]);
+      setListError(undefined);
+      return;
+    }
+    let cancelled = false;
+    setIds(undefined);
+    setListError(undefined);
+    void chainAdapter
+      .getGrantsByEmployer(address)
+      .then((found) => {
+        if (!cancelled) setIds(found);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setIds([]);
+          setListError("Couldn't read your bonuses from the chain just now. Try again in a moment.");
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [address]);
+
+  /* Status always comes from the chain, so it is fetched lazily, one grant at a time. */
+  useEffect(() => {
+    if (!ids) return;
+    const pending = ids.map((id) => id.toString()).filter((id) => !(id in rows));
     if (pending.length === 0) return;
     let cancelled = false;
     void Promise.all(
@@ -39,10 +73,6 @@ export function EmployerGrants({ navigate }: { navigate: (to: string) => void })
       cancelled = true;
     };
   }, [ids, rows]);
-
-  /* A stored entry that is not a number can never be read, so it resolves at
-     once rather than sitting at "Reading…". */
-  const rowFor = (id: string): Row | undefined => (/^\d+$/.test(id) ? rows[id] : "unreadable");
 
   const open = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -76,36 +106,48 @@ export function EmployerGrants({ navigate }: { navigate: (to: string) => void })
       </form>
 
       <section className="register-list">
-        <h2>Funded from this browser</h2>
+        <h2>Funded by this wallet</h2>
 
-        {ids.length === 0 ? (
+        {!address ? (
           <p className="register-empty">
-            No bonuses yet. Your first one takes about two minutes.{" "}
-            <button className="lnk" type="button" onClick={() => navigate("/employer/fund")}>
-              Give a bonus
+            Connect the wallet you funded from to list your bonuses.{" "}
+            <button className="lnk" type="button" onClick={() => void account.connect()}>
+              Connect wallet
             </button>
+          </p>
+        ) : ids === undefined ? (
+          <p className="register-empty">Reading your bonuses from the chain…</p>
+        ) : ids.length === 0 ? (
+          <p className="register-empty">
+            {listError ?? (
+              <>
+                No bonuses from this wallet yet. Your first one takes about two minutes.{" "}
+                <button className="lnk" type="button" onClick={() => navigate("/employer/fund")}>
+                  Give a bonus
+                </button>
+              </>
+            )}
           </p>
         ) : (
           <>
             <ul className="strips">
-              {ids.map((id) => {
-                const row = rowFor(id);
-                const reading = row === undefined;
+              {ids.map((grantId) => {
+                const id = grantId.toString();
+                const row = rows[id];
+                const stillReading = row === undefined;
                 const broken = row === "unreadable";
                 const grant = typeof row === "object" ? row : undefined;
-                const money = grant ? certAmount(id, grant.stockAmount, stockLabel(grant.stock)) : undefined;
+                const money = grant ? certAmount(grant.usdgAmount, grant.stockAmount, stockLabel(grant.stock)) : undefined;
 
                 return (
                   <li key={id}>
                     <button
-                      className={`strip${reading ? " is-reading" : ""}`}
+                      className={`strip${stillReading ? " is-reading" : ""}`}
                       type="button"
                       onClick={() => navigate(`/contractor/grant?id=${id}`)}
                     >
                       <span className="strip-lead">
-                        <span className="strip-amount">
-                          {broken ? "-" : reading ? "Reading…" : money?.amount}
-                        </span>
+                        <span className="strip-amount">{broken ? "-" : stillReading ? "Reading…" : money?.amount}</span>
                         {grant && (
                           <span className="strip-meta">
                             <span>{stockLabel(grant.stock)}</span>
@@ -126,8 +168,8 @@ export function EmployerGrants({ navigate }: { navigate: (to: string) => void })
             </ul>
 
             <p className="register-cap">
-              Only bonuses funded from this browser appear here. The contract can't list bonuses by employer, so any
-              other bonus opens by its number.
+              Every bonus funded by this wallet, read from the chain. The contract can't list them itself, so the page
+              reads its funding events.
             </p>
           </>
         )}

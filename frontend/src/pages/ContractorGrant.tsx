@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { chainAdapter, type DemoGrant } from "../chainAdapter";
+import { chainAdapter, explorerContractUrl, type DemoGrant } from "../chainAdapter";
 import { Certificate, type CertState } from "../components/Certificate";
 import { DeskShell } from "../components/DeskShell";
 import { IconAlert } from "../components/icons";
+import { JurisdictionGate } from "../components/JurisdictionGate";
 import { Notice } from "../components/Notice";
 import { stockLabel } from "../components/StockPicker";
 import type { AccountView } from "../hooks/useAccount";
-import { certAmount, readLocal, MILESTONE_KEY } from "../local";
+import type { Jurisdiction } from "../hooks/useJurisdiction";
+import { certAmount } from "../amount";
 
 /* The certificate entrance of §5.1 starts at 200ms and runs 900ms, and §11.1
    wants the on-load stamp to start 500ms after it lands. */
@@ -46,15 +48,20 @@ type ContractorGrantProps = {
   header: ReactNode;
   grantId?: string;
   account: AccountView;
+  jurisdiction: Jurisdiction;
+  onHome: () => void;
   navigate: (to: string) => void;
 };
 
-export function ContractorGrant({ header, grantId, account, navigate }: ContractorGrantProps) {
+export function ContractorGrant({ header, grantId, account, jurisdiction, onHome, navigate }: ContractorGrantProps) {
   const [grant, setGrant] = useState<DemoGrant>();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>();
   const [busy, setBusy] = useState<"release" | "claim">();
   const [entry, setEntry] = useState("");
+  /* Reading a certificate is free, so the jurisdiction gate is not in front of it. It is
+     raised on the click that would actually move funds (§25). */
+  const [gateAsked, setGateAsked] = useState(false);
   /* Latched when a grant arrives, so an unrelated re-render cannot cancel the
      one on-load stamp §11.1 allows. Stays 0 for every load after an action. */
   const arrivalDelay = useRef(0);
@@ -118,12 +125,13 @@ export function ContractorGrant({ header, grantId, account, navigate }: Contract
         ? "claimed"
         : "released";
 
-  const storedMilestone = grantId ? readLocal(MILESTONE_KEY(grantId)) : undefined;
-  const milestone = storedMilestone ?? (grant && !grant.milestone.startsWith("Not stored") ? grant.milestone : undefined);
+  /* The milestone and the agreed amount are read from the contract. They used to be looked
+     up in this browser's localStorage, which meant the certificate lost them the moment it
+     was opened anywhere else — a different device, a private window, or after clearing site
+     data. There is no fallback now because there is nothing left to fall back to. */
+  const milestone = grant?.milestone;
 
-  /* Without a recorded dollar amount the figure is a token quantity, and the
-     sub-line drops the "in … stock" phrasing (§3.2). */
-  const money = grant ? certAmount(grantId, grant.stockAmount, stockLabel(grant.stock)) : undefined;
+  const money = grant ? certAmount(grant.usdgAmount, grant.stockAmount, stockLabel(grant.stock)) : undefined;
   const amount = money?.amount ?? "$0";
   const subLine = money?.subLine;
 
@@ -144,6 +152,13 @@ export function ContractorGrant({ header, grantId, account, navigate }: Contract
      never more than one primary action. */
   const canRelease = held && isEmployer && !deadlinePassed;
   const canClaim = held && isContractor && deadlinePassed;
+
+  /* Only the two actions are gated. Reading is not. */
+  const gateOpen = (canRelease || canClaim) && gateAsked && jurisdiction.status !== "passed";
+  const actThroughGate = (kind: "release" | "claim") => {
+    if (jurisdiction.status === "passed") void act(kind);
+    else setGateAsked(true);
+  };
 
   const countdown = held && isContractor && grant ? countdownText(grant.deadlineTimestamp) : undefined;
 
@@ -187,7 +202,8 @@ export function ContractorGrant({ header, grantId, account, navigate }: Contract
   }
 
   return (
-    <DeskShell header={header}>
+    <>
+      <DeskShell header={header}>
       <div className="payoff">
         <div className="payoff-stage">
           {/* While reading, the certificate is a blank placeholder at 45%: the
@@ -233,11 +249,19 @@ export function ContractorGrant({ header, grantId, account, navigate }: Contract
                   className={`btn btn-light${busy ? " is-busy" : ""}`}
                   type="button"
                   aria-busy={busy ? true : undefined}
-                  onClick={() => void act(canRelease ? "release" : "claim")}
+                  onClick={() => actThroughGate(canRelease ? "release" : "claim")}
                 >
                   {actionLabel}
                 </button>
               </div>
+            )}
+
+            {/* Evidence, not a product surface, so it stays quieter than the
+                certificate it belongs to (§23). */}
+            {grant && (
+              <a className="payoff-onchain" href={explorerContractUrl()} target="_blank" rel="noreferrer">
+                View onchain
+              </a>
             )}
           </>
         )}
@@ -251,6 +275,17 @@ export function ContractorGrant({ header, grantId, account, navigate }: Contract
       </div>
 
       <Notice />
-    </DeskShell>
+      </DeskShell>
+
+      {gateOpen && (
+        <JurisdictionGate
+          status={jurisdiction.status}
+          region={jurisdiction.region}
+          onChoose={jurisdiction.choose}
+          onReset={jurisdiction.reset}
+          onHome={onHome}
+        />
+      )}
+    </>
   );
 }

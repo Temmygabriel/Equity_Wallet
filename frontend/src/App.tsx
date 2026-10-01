@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { DeskShell } from "./components/DeskShell";
 import { Footer } from "./components/Footer";
 import { Header } from "./components/Header";
 import { JurisdictionGate } from "./components/JurisdictionGate";
@@ -67,13 +66,17 @@ export function App() {
   if (location.route === "/") {
     content = <Landing navigate={navigate} header={header} />;
   } else if (location.route === "/contractor/grant") {
-    /* A desk route carries its own header inside the desk surface. */
-    content = gateOpen ? (
-      <DeskShell header={header}>
-        <main className="surface-blank" />
-      </DeskShell>
-    ) : (
-      <ContractorGrant header={header} grantId={location.id} account={account} navigate={navigate} />
+    /* A desk route carries its own header inside the desk surface. It is not behind the
+       gate — the certificate is readable without one — so it renders directly. */
+    content = (
+      <ContractorGrant
+        header={header}
+        grantId={location.id}
+        account={account}
+        jurisdiction={jurisdiction}
+        onHome={goHome}
+        navigate={navigate}
+      />
     );
   } else {
     content = (
@@ -84,7 +87,7 @@ export function App() {
         ) : location.route === "/employer/fund" ? (
           <EmployerFund navigate={navigate} />
         ) : (
-          <EmployerGrants navigate={navigate} />
+          <EmployerGrants navigate={navigate} account={account} />
         )}
         <Footer gated={gated} />
       </>

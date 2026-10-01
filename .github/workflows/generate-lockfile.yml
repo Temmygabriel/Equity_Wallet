@@ -1,0 +1,42 @@
+# Generates package-lock.json on a GitHub runner and uploads it as an artifact.
+#
+# The development machine for this project cannot run npm (8 GB RAM, no node_modules), so the
+# lockfile is produced here and committed by hand. Once package-lock.json is on the default
+# branch, CI installs with `npm ci` instead of `npm install`, which is what makes a judged
+# build reproducible rather than dependent on whatever the registry resolved that morning.
+#
+# Manual dispatch only: it writes nothing to the repository by itself.
+
+name: Generate lockfile
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lockfile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      # --package-lock-only resolves the full tree and writes the lockfile without
+      # downloading or building anything.
+      - name: Resolve the dependency tree
+        run: npm install --package-lock-only
+      - name: Show what was produced
+        run: |
+          set -o pipefail
+          ls -l package-lock.json
+          head -n 5 package-lock.json
+      - name: Upload the lockfile
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-lock
+          path: package-lock.json
+          if-no-files-found: error

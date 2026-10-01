@@ -3,7 +3,7 @@ import { chainAdapter } from "../chainAdapter";
 import { Certificate, type CertState } from "../components/Certificate";
 import { IconAlert, IconCalendar, IconCheck, IconCopy } from "../components/icons";
 import { StockPicker, stockLabel, type StockTicker } from "../components/StockPicker";
-import { appendToRegister, dollarLabel, MILESTONE_KEY, USDG_KEY, writeLocal } from "../local";
+import { dollarLabel } from "../amount";
 
 /* Required strings (§8.1, §8.5). No first person, no "please", one sentence. */
 const ADDRESS_ERROR = "That address isn't valid. Paste the full 0x address.";
@@ -113,14 +113,15 @@ export function EmployerFund({ navigate }: { navigate: (to: string) => void }) {
           contractor: contractor as `0x${string}`,
           deadline: new Date(`${deadline}T00:00:00Z`),
           stock,
-          usdgAmount: amount
+          usdgAmount: amount,
+          milestone: milestone.trim()
         },
         (next) => setStage(next)
       );
+      /* Nothing is written to this browser. The amount and the milestone went on chain with
+         the funding transaction, so the contractor's link carries the whole agreement to
+         whatever machine opens it. */
       const raw = id.toString();
-      writeLocal(USDG_KEY(raw), amount);
-      writeLocal(MILESTONE_KEY(raw), milestone.trim());
-      appendToRegister(raw);
       setFundedId(raw);
       setStep("done");
     } catch (reason) {
@@ -203,6 +204,9 @@ export function EmployerFund({ navigate }: { navigate: (to: string) => void }) {
                       id="milestone"
                       name="milestone"
                       required
+                      /* The contract rejects over 280 characters, so the field stops at the
+                         same bound rather than letting the wallet reject it after signing. */
+                      maxLength={280}
                       value={milestone}
                       onChange={(event) => setMilestone(event.target.value)}
                     />
@@ -237,8 +241,7 @@ export function EmployerFund({ navigate }: { navigate: (to: string) => void }) {
                       </p>
                     )}
                     <p className="field-note">
-                      The contract stores the deadline and the stock. This description is kept with your agreement in
-                      this browser and shown on the certificate.
+                      Written into the contract when you fund it, so the certificate reads the same on any device.
                     </p>
                   </div>
                 </div>

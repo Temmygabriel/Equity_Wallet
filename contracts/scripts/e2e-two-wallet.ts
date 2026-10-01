@@ -10,6 +10,7 @@ import { ethers } from "hardhat";
  * It exercises both payout paths:
  *   1. employer funds, then employer releases before the deadline
  *   2. employer funds, the deadline passes, contractor claims
+ *   3. employer funds a third grant and leaves it held, as the certificate a judge opens
  *
  * Read-only w.r.t. repository state: it deploys nothing and writes nothing to disk. It does
  * spend testnet ETH from both accounts for gas.
@@ -17,6 +18,7 @@ import { ethers } from "hardhat";
 
 const TESTNET_CHAIN_ID = 46630n;
 const UI_MULTIPLIER = 1_000_000n;
+const MILESTONE = "Shipping the Robinhood Chain integration";
 
 function required(name: string): string {
   const value = process.env[name];
@@ -81,13 +83,15 @@ async function main() {
   await (
     await escrow
       .connect(employer)
-      .fundGrant(before1, releaseAmount, aaplAddress, releaseAmount, BigInt(Math.floor(Date.now() / 1000) + 1200))
+      .fundGrant(before1, releaseAmount, aaplAddress, releaseAmount, BigInt(Math.floor(Date.now() / 1000) + 1200), MILESTONE)
   ).wait();
 
   const funded1 = await escrow.grants(before1);
   check("fund records the contractor", funded1.contractor === contractor.address, funded1.contractor);
   check("fund stores the multiplier once", funded1.fundingMultiplier === UI_MULTIPLIER, funded1.fundingMultiplier.toString());
   check("fund escrows the raw amount", funded1.rawEscrowAmount === releaseAmount, funded1.rawEscrowAmount.toString());
+  check("fund stores the USDG amount", funded1.fundedUsdgAmount === releaseAmount, funded1.fundedUsdgAmount.toString());
+  check("fund stores the milestone", funded1.milestone === MILESTONE, funded1.milestone);
 
   const escrowUsdgAfterFund = await usdg.balanceOf(escrowAddress);
   check("escrow holds no USDG after funding", escrowUsdgAfterFund === 0n, escrowUsdgAfterFund.toString());
@@ -113,7 +117,7 @@ async function main() {
   await (
     await escrow
       .connect(employer)
-      .fundGrant(before2, claimAmount, aaplAddress, claimAmount, BigInt(Math.floor(Date.now() / 1000) + 1200))
+      .fundGrant(before2, claimAmount, aaplAddress, claimAmount, BigInt(Math.floor(Date.now() / 1000) + 1200), "Delivering the second milestone")
   ).wait();
 
   /* The employer must not be able to release once the deadline has passed. */
@@ -145,10 +149,36 @@ async function main() {
   }
   check("a released grant cannot be claimed twice", secondClaimRefused, secondClaimRefused ? "reverted" : "SUCCEEDED, which is wrong");
 
+  /* ------------------------------------------------- path 3: the judge's certificate ---- */
+
+  /* This one is deliberately left FUNDED. A judge opening the deployed site should land on a
+     certificate that shows the escrow actually holding something, with the terms readable
+     from chain alone, rather than on a grant that has already paid out. The deadline is far
+     enough out that it stays held while the submission is being reviewed. */
+  const judgeAmount = ethers.parseUnits("2500", 18);
+  const judgeDeadline = BigInt(Math.floor(Date.now() / 1000) + 180 * 24 * 3600);
+
+  await (await usdg.connect(employer).approve(escrowAddress, judgeAmount)).wait();
+  await (await escrow.connect(employer).createGrant(contractor.address, judgeDeadline)).wait();
+  const judgeGrantId = await escrow.grantCount();
+  await (
+    await escrow
+      .connect(employer)
+      .fundGrant(judgeGrantId, judgeAmount, aaplAddress, judgeAmount, BigInt(Math.floor(Date.now() / 1000) + 1200), MILESTONE)
+  ).wait();
+
+  /* Read it back the way a browser with no history would: one contract call, no local state. */
+  const judgeGrant = await escrow.grants(judgeGrantId);
+  check("judge grant is held, not released", judgeGrant.status === 1n, judgeGrant.status.toString());
+  check("judge grant carries its milestone", judgeGrant.milestone === MILESTONE, judgeGrant.milestone);
+  check("judge grant carries its USDG amount", judgeGrant.fundedUsdgAmount === judgeAmount, ethers.formatUnits(judgeGrant.fundedUsdgAmount, 18));
+
   console.log("\n--- results ---");
   for (const line of results) console.log(line);
   const failed = results.filter((line) => line.startsWith("FAIL")).length;
   console.log(`\n${results.length - failed}/${results.length} checks passed.`);
+  /* Printed so the value can be copied into Vercel as VITE_JUDGE_GRANT_ID after the run. */
+  console.log(`\nVITE_JUDGE_GRANT_ID=${judgeGrantId}`);
   if (failed > 0) process.exitCode = 1;
 }
 
