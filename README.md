@@ -150,6 +150,11 @@ Honest boundaries, not oversights:
 - **The assets are mocks.** `MockUSDG` and the mock stock tokens are deployed by the demo script. They are not real securities and not real USDG.
 - **The swap is not 0x.** See the note under "End-to-end mock demo". The adapter is an explicit boundary that a real router would implement; on testnet it is a deterministic mock.
 - **The jurisdiction gate checks nothing.** It is a frontend placeholder.
+- **MetaMask shows a phishing warning on the deployed site.** This is a reputation false positive, and it is worth being precise about why rather than waving it away:
+  - The domain is **not** on MetaMask's `eth-phishing-detect` blocklist — searching the current list for `equitywallet` returns nothing. (It does contain 2,097 `vercel.app` entries and a dense cluster of `equity*` scam domains, which is the neighbourhood this deployment sits in.)
+  - The wording MetaMask shows comes from **Blockaid**, its integrated scanner. Blockaid flags domains it has not previously seen and **cannot simulate transactions on a chain it does not know**. Robinhood Chain testnet (`46630`) is exactly that, so it cannot clear the approval and warns instead.
+  - Nothing in this app behaves like a drainer. It never calls `wallet_addEthereumChain` or `wallet_switchEthereumChain` — the usual way a malicious site redirects you to a chain it controls — and it only ever asks for `eth_requestAccounts`. `chainAdapter.ts` approves the **exact** USDG amount for the swap rather than an unlimited allowance, and resets the allowance to zero afterwards.
+  - "Continue at your own risk" is MetaMask's dismiss button, so the demo runs through it. Everything the wallet is asked to do can be checked independently first: all six contracts are **source-verified on the explorer**, so each address in the table above opens on readable Solidity. A real deployment would need its own domain rather than a shared `*.vercel.app` subdomain, which is the main thing driving the warning.
 - **No audit.** This code has had a focused static review and a test suite, not an external audit, and it should not hold real value.
 
 ## Robinhood Chain reserved prize slot
