@@ -19,27 +19,27 @@ on:
       grant_escrow_address:
         description: GrantEscrow address
         required: true
-        default: "0x339a44f967dD1eD1bDBa98Fb4396DaB77e4D3645"
+        default: "0xFf80d1Ce106113cCAEda490b58852E9EA6F28319"
       usdg_address:
         description: MockUSDG address (constructor arg 1)
         required: true
-        default: "0x308b3d480199ACcD21c8BE882A5E9F3077D0EaAC"
+        default: "0x9F8aAfE4Fc2FeED7CC9C7484026acdE09086eCD5"
       swap_adapter_address:
         description: MockSwapAdapter address (constructor arg 2)
         required: true
-        default: "0x9B097E89cDe2f9DBa4001594C25692b5a5e5a529"
+        default: "0xbb83A7FDad0E68E949b79134B4f83Bdc8Ef22C46"
       aapl_address:
         description: Mock AAPL address (constructor arg 3)
         required: true
-        default: "0x17078672b60471957f42A0343d510B1a4e81DC59"
+        default: "0x06c8DF6D1C41E23B9f7A6c314C1C4e0b3a1eB6dB"
       tsla_address:
         description: Mock TSLA address (constructor arg 4)
         required: true
-        default: "0x6993Ef68e09ec698bb8A607Eb24a28060906b27E"
+        default: "0xAcBc1073B47fc8774c7b3E6c2d4E3a93C33726c5"
       nvda_address:
         description: Mock NVDA address (constructor arg 5)
         required: true
-        default: "0x31bACde94bEa0FE3035227053dbf03a4B029a6fC"
+        default: "0x65a9376d29c67A4De1269fc317B07cd4A35eE490"
 
 permissions:
   contents: read
@@ -59,7 +59,7 @@ jobs:
           node-version: 20
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Compile contracts
         run: npm run compile

@@ -75,20 +75,22 @@ While locating a testnet deployer wallet, a private key was printed into an assi
 
 ## Deployment record
 
-**Deployed 2026-09-30.** First deployment was run `36737126586`; after the rule 9 fix changed `fundGrant`'s signature (Step 16) the contracts were redeployed as run `36741437572`, **which supersedes the first set — do not use the earlier addresses**. Verified against the Robinhood Chain explorer, not just the job log: `GrantEscrow` reports `is_contract: true` and `creation_status: "success"`, and its creator is the funded deployer.
+**Deployed 2026-10-01** (run `36891460013`). This is the third and current deployment; it is the **only** one whose `GrantEscrow` stores the milestone and the funded USDG amount on chain, so it is the only one a submission may point at. Verified against the Robinhood Chain explorer, not just the job log: `GrantEscrow` reports `is_contract: true`, `creation_status: "success"`, `is_verified: true`, and its creator is the funded deployer.
 
 | Contract | Address |
 |---|---|
-| GrantEscrow | `0x339a44f967dD1eD1bDBa98Fb4396DaB77e4D3645` |
-| MockUSDG | `0x308b3d480199ACcD21c8BE882A5E9F3077D0EaAC` |
-| Mock AAPL | `0x17078672b60471957f42A0343d510B1a4e81DC59` |
-| Mock TSLA | `0x6993Ef68e09ec698bb8A607Eb24a28060906b27E` |
-| Mock NVDA | `0x31bACde94bEa0FE3035227053dbf03a4B029a6fC` |
+| GrantEscrow | `0xFf80d1Ce106113cCAEda490b58852E9EA6F28319` |
+| MockUSDG | `0x9F8aAfE4Fc2FeED7CC9C7484026acdE09086eCD5` |
+| Mock AAPL | `0x06c8DF6D1C41E23B9f7A6c314C1C4e0b3a1eB6dB` |
+| Mock TSLA | `0xAcBc1073B47fc8774c7b3E6c2d4E3a93C33726c5` |
+| Mock NVDA | `0x65a9376d29c67A4De1269fc317B07cd4A35eE490` |
+| MockSwapAdapter | `0xbb83A7FDad0E68E949b79134B4f83Bdc8Ef22C46` |
 
-- GrantEscrow creation tx: `0x778227a19d4f0c5890e0c44237b0205ee8caa636f67d1c0e05747769e2c81519`
-- **Superseded first deployment** (do not use): GrantEscrow `0xa323e031a9C8107a993a572Af23448696523e6aA`, from run `36737126586`. It predates the `fundGrant` signature change.
-- Deployer `0xe5Fe9119000C9E1113dc504891A83Da7bbaa7a7b` is at `0.00992096` testnet ETH after both deploys — about `0.000079` ETH spent in total, against `0.01` funded. Roughly 125 deploys remain affordable.
-- **All six contracts are verified on the explorer** (2026-09-30), confirmed by querying `module=contract&action=getsourcecode` directly rather than trusting the job log: GrantEscrow, MockUSDG, MockSwapAdapter, and the three MockStockTokens all return a non-empty `SourceCode`. Build Spec §6's explorer-verified item is satisfied. Re-runnable via the **Verify contracts on the explorer** workflow.
+- GrantEscrow creation tx: `0x2662fc917093badaafee24dbcab2ef5c89aa811cff68d6f1ac65eebb5687d663`
+- **Do not use the two earlier deployments.** `0x339a44f967dD1eD1bDBa98Fb4396DaB77e4D3645` (run `36741437572`) and `0xa323e031a9C8107a993a572Af23448696523e6aA` (run `36737126586`) both have the old 7-field `grants()` struct. A frontend built from this repository cannot decode them: viem expects nine return values and will fail the read. `GrantEscrow` `0x339a44f9…` was the live address until 2026-10-01.
+- The old deployment's mocks, also superseded: MockUSDG `0x308b3d480199ACcD21c8BE882A5E9F3077D0EaAC`, AAPL `0x17078672b60471957f42A0343d510B1a4e81DC59`, TSLA `0x6993Ef68e09ec698bb8A607Eb24a28060906b27E`, NVDA `0x31bACde94bEa0FE3035227053dbf03a4B029a6fC`, MockSwapAdapter `0x9B097E89cDe2f9DBa4001594C25692b5a5e5a529`.
+- Deployer `0xe5Fe9119000C9E1113dc504891A83Da7bbaa7a7b` is at `0.0098463313` testnet ETH after three deploys — about `0.000154` ETH spent in total, against `0.01` funded. Roughly 65 deploys remain affordable.
+- **All six contracts are verified on the explorer** (re-confirmed for the 2026-10-01 deployment), by querying `module=contract&action=getsourcecode` directly rather than trusting the job log: GrantEscrow, MockUSDG, MockSwapAdapter, and the three MockStockTokens all return a non-empty `SourceCode`. Build Spec §6's explorer-verified item is satisfied. Re-runnable via the **Verify contracts on the explorer** workflow.
   - The first verify run reported **success while verifying nothing**. `npx hardhat` was invoked from the repo root, where there is no `hardhat.config.ts`, so it aborted with `HH1: You are not inside a Hardhat project` — and the step piped through `tee`, whose exit status is always 0, so the abort could not fail the job. Both faults are now fixed (`working-directory: contracts`, `set -o pipefail`), and the same pipe was corrected in the deploy and two-wallet workflows. **A green check is only evidence if the log shows the work happening.**
 - These are **mock** assets deployed by the demo script. They are not real securities and not the official USDG.
 - The addresses are public configuration, not secrets, and are mirrored in the README's "Deployed contracts" section.
@@ -98,16 +100,20 @@ While locating a testnet deployer wallet, a private key was printed into an assi
 The frontend reads its configuration through `import.meta.env[name]` inside `requiredAddress()` in `frontend/src/chainAdapter.ts`. That dynamic lookup was checked against the built bundle rather than assumed: Vite compiles `import.meta.env` into a real object literal (`...VITE_VERCEL_ENV:"production",...`), so a var set in Vercel at build time **is** reachable by dynamic key. Set these five in the Vercel project and redeploy:
 
 ```
-VITE_GRANT_ESCROW_ADDRESS=0x339a44f967dD1eD1bDBa98Fb4396DaB77e4D3645
-VITE_USDG_ADDRESS=0x308b3d480199ACcD21c8BE882A5E9F3077D0EaAC
-VITE_AAPL_ADDRESS=0x17078672b60471957f42A0343d510B1a4e81DC59
-VITE_TSLA_ADDRESS=0x6993Ef68e09ec698bb8A607Eb24a28060906b27E
-VITE_NVDA_ADDRESS=0x31bACde94bEa0FE3035227053dbf03a4B029a6fC
+VITE_GRANT_ESCROW_ADDRESS=0xFf80d1Ce106113cCAEda490b58852E9EA6F28319
+VITE_USDG_ADDRESS=0x9F8aAfE4Fc2FeED7CC9C7484026acdE09086eCD5
+VITE_AAPL_ADDRESS=0x06c8DF6D1C41E23B9f7A6c314C1C4e0b3a1eB6dB
+VITE_TSLA_ADDRESS=0xAcBc1073B47fc8774c7b3E6c2d4E3a93C33726c5
+VITE_NVDA_ADDRESS=0x65a9376d29c67A4De1269fc317B07cd4A35eE490
 ```
 
 `VITE_RH_RPC_URL` defaults to the public testnet RPC in `chainAdapter.ts` and does not need to be set.
 
+**A sixth var is optional but worth setting for judging:** `VITE_JUDGE_GRANT_ID`. When it holds a grant number, the landing page offers a "View a live testnet certificate" link straight to that certificate. Without it the link simply does not render — no broken state.
+
 Until those are set, the deployed site throws `Missing or invalid VITE_GRANT_ESCROW_ADDRESS` on the employer and contractor routes. That message previously pointed only at `frontend/.env.local`, which is the wrong instruction for a deployed build; it now names the deployment environment too.
+
+**The 2026-10-01 contract change makes the Vercel variables load-bearing, not cosmetic.** The frontend's `grants` ABI now expects the nine-field struct. If Vercel still holds `0x339a44f9…`, the read does not return a stale-but-plausible certificate — viem cannot decode the seven-value return against a nine-output ABI and throws. That presents as a broken `/contractor/grant` and `/employer/grants`, and it is the expected symptom until the five values above are pasted in and the site is redeployed.
 
 - 0x route: not configured. 0x supports Robinhood Chain mainnet `4663`, not testnet `46630`.
 
@@ -116,8 +122,8 @@ Until those are set, the deployed site throws `Missing or invalid VITE_GRANT_ESC
 Ordered by what the submission checklist in the Build Spec §6 actually scores. Submissions close **4 Oct 2026**.
 
 1. ~~**Verify the deployed contracts on the explorer.**~~ **Done 2026-09-30** — all six verified, confirmed against the explorer's own API. See the deployment record.
-2. ~~**Update the five `VITE_*` addresses in Vercel and redeploy.**~~ **Done 2026-09-30** — verified against the live production bundle on `/assets/index-BppQ0zLR.js`: all five current addresses are present and the superseded `0xa323e031…` is absent.
-3. ~~**End-to-end test with two separate wallets.**~~ **Done 2026-09-30 — 10/10 checks passed** against the *deployed* contracts, with real transactions and confirmations. `CONTRACTOR_PRIVATE_KEY` is now a repository secret. Re-runnable via the **End-to-end two-wallet test** workflow.
+2. ~~**Update the five `VITE_*` addresses in Vercel and redeploy.**~~ **Done 2026-09-30 for the second deployment** — verified against the live production bundle on `/assets/index-BppQ0zLR.js`. **Then reopened on 2026-10-01**: the third deployment replaced every address, so the five values must be pasted again. See "Frontend configuration" for why the site is broken until they are.
+3. ~~**End-to-end test with two separate wallets.**~~ **Done 2026-09-30 against the second deployment — 10/10 checks passed.** Re-run against the third deployment (run dispatched 2026-10-01); see the end-to-end report for the result. `CONTRACTOR_PRIVATE_KEY` is a repository secret.
    - The run independently confirmed the contractor address is `0x49B4f09C5894c1C90B0ca9099AF3De0Faf7f3037` and the employer `0xe5Fe9119…`, so this exercises two genuinely distinct accounts.
    - It created **two real grants** on the deployed escrow (10 AAPL released by the employer, 5 AAPL claimed after timeout), leaving the contractor holding 15 mock AAPL. That is live testnet state, not a simulation.
    - It also asserts the negative cases by attempting them and requiring a revert: the employer cannot release after the deadline, and a released grant cannot be claimed twice.

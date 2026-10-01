@@ -33,16 +33,16 @@ PROGRESS.md      Project handoff and implementation status
 
 ## Deployed contracts
 
-Live on **Robinhood Chain testnet** (chain ID `46630`), deployed 30 September 2026.
+Live on **Robinhood Chain testnet** (chain ID `46630`), deployed 1 October 2026.
 
 | Contract | Address |
 |---|---|
-| **GrantEscrow** | [`0x339a44f967dD1eD1bDBa98Fb4396DaB77e4D3645`](https://explorer.testnet.chain.robinhood.com/address/0x339a44f967dD1eD1bDBa98Fb4396DaB77e4D3645) |
-| MockUSDG | [`0x308b3d480199ACcD21c8BE882A5E9F3077D0EaAC`](https://explorer.testnet.chain.robinhood.com/address/0x308b3d480199ACcD21c8BE882A5E9F3077D0EaAC) |
-| Mock AAPL | [`0x17078672b60471957f42A0343d510B1a4e81DC59`](https://explorer.testnet.chain.robinhood.com/address/0x17078672b60471957f42A0343d510B1a4e81DC59) |
-| Mock TSLA | [`0x6993Ef68e09ec698bb8A607Eb24a28060906b27E`](https://explorer.testnet.chain.robinhood.com/address/0x6993Ef68e09ec698bb8A607Eb24a28060906b27E) |
-| Mock NVDA | [`0x31bACde94bEa0FE3035227053dbf03a4B029a6fC`](https://explorer.testnet.chain.robinhood.com/address/0x31bACde94bEa0FE3035227053dbf03a4B029a6fC) |
-| MockSwapAdapter | [`0x9B097E89cDe2f9DBa4001594C25692b5a5e5a529`](https://explorer.testnet.chain.robinhood.com/address/0x9B097E89cDe2f9DBa4001594C25692b5a5e5a529) |
+| **GrantEscrow** | [`0xFf80d1Ce106113cCAEda490b58852E9EA6F28319`](https://explorer.testnet.chain.robinhood.com/address/0xFf80d1Ce106113cCAEda490b58852E9EA6F28319) |
+| MockUSDG | [`0x9F8aAfE4Fc2FeED7CC9C7484026acdE09086eCD5`](https://explorer.testnet.chain.robinhood.com/address/0x9F8aAfE4Fc2FeED7CC9C7484026acdE09086eCD5) |
+| Mock AAPL | [`0x06c8DF6D1C41E23B9f7A6c314C1C4e0b3a1eB6dB`](https://explorer.testnet.chain.robinhood.com/address/0x06c8DF6D1C41E23B9f7A6c314C1C4e0b3a1eB6dB) |
+| Mock TSLA | [`0xAcBc1073B47fc8774c7b3E6c2d4E3a93C33726c5`](https://explorer.testnet.chain.robinhood.com/address/0xAcBc1073B47fc8774c7b3E6c2d4E3a93C33726c5) |
+| Mock NVDA | [`0x65a9376d29c67A4De1269fc317B07cd4A35eE490`](https://explorer.testnet.chain.robinhood.com/address/0x65a9376d29c67A4De1269fc317B07cd4A35eE490) |
+| MockSwapAdapter | [`0xbb83A7FDad0E68E949b79134B4f83Bdc8Ef22C46`](https://explorer.testnet.chain.robinhood.com/address/0xbb83A7FDad0E68E949b79134B4f83Bdc8Ef22C46) |
 
 Live frontend: **https://equitywallet-psi.vercel.app**
 

@@ -17,8 +17,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+      # npm ci, not npm install: it installs exactly what package-lock.json pins and
+      # fails if the lockfile and the manifests disagree. A judged build should not
+      # depend on what the registry happened to resolve that morning.
       - name: Install dependencies
-        run: npm install
+        run: npm ci
       - name: Compile contracts
         run: npm run compile
       - name: Run contract tests
