@@ -159,8 +159,12 @@ async function main() {
   const judgeDeadline = BigInt(Math.floor(Date.now() / 1000) + 180 * 24 * 3600);
 
   await (await usdg.connect(employer).approve(escrowAddress, judgeAmount)).wait();
-  await (await escrow.connect(employer).createGrant(contractor.address, judgeDeadline)).wait();
+  /* The counter is read *before* the create, as in paths 1 and 2: `grantId = grantCount++`
+     means the current value is the id the next grant will take, and reading it afterwards
+     returns one past it — which is a grant that does not exist yet, whose employer is the
+     zero address, so the fund reverts "only employer". */
   const judgeGrantId = await escrow.grantCount();
+  await (await escrow.connect(employer).createGrant(contractor.address, judgeDeadline)).wait();
   await (
     await escrow
       .connect(employer)

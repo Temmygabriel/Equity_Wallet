@@ -10,7 +10,11 @@ Equity Benefit Wallet is one contract that holds the bonus until one of two thin
 
 The employer picks the stock and the deadline up front. The contract holds it. Once funded, nobody can pull it back — there is no cancellation path, no admin override, and no upgrade. What the contractor sees is a certificate showing exactly what is held and when it becomes theirs.
 
-This is a hackathon MVP built for **Arbitrum Open House Singapore, Online Buildathon**, targeting the **Robinhood Chain reserved prize slot**. It runs on Robinhood Chain testnet against mock assets. It is not a product, and nothing in it handles real securities or real money.
+This is a hackathon MVP built for **Arbitrum Open House Singapore, Online Buildathon**, targeting the **Robinhood Chain reserved prize slot**. It runs on Robinhood Chain testnet against mock assets.
+
+This is a hackathon MVP using testnet mock assets. It is not production custody and has not had an external security audit.
+
+Nothing here handles real securities or real money, and nothing here should be given any.
 
 For the toolchain, architecture, and deployment mechanics, read on.
 
@@ -99,7 +103,9 @@ The mock adapter converts USDG to the selected mock stock deterministically at a
 
 ## Jurisdiction gate
 
-The three app routes (`/employer/fund`, `/employer/grants`, `/contractor/grant`) open a jurisdiction gate before any of their content is rendered. The landing page is ungated.
+The two employer routes (`/employer/fund`, `/employer/grants`) open a jurisdiction gate before any of their content is rendered. The landing page and the contractor certificate are ungated.
+
+**The certificate is not gated on purpose.** It is a read: opening it asks the chain a question and shows the answer. It requests no wallet, signs nothing, and moves nothing, so there is nothing for a gate to protect — and making a judge answer an eligibility question before they can look at the thing being judged would be a worse demo, not a safer one. A contractor opening their own bonus link sees what is held for them immediately. The gate appears at the point of action instead: it is asked before a release or a claim, not before a look.
 
 **It is a demo-only restriction. It is not a compliance control and it verifies nothing.** It runs entirely in the browser, checks the answer against a constant in the source, and sends nothing anywhere. Every screen it appears on says so, and the footer on a gated page repeats it.
 
@@ -141,7 +147,7 @@ The contract is `contracts/contracts/GrantEscrow.sol`, about 125 lines. It is de
 
 **14. No upgradeability.** The escrow is deployed as immutable logic with no proxy and no admin. Constructor arguments are immutable. There is no token-registry admin, and nothing has authority over an existing grant.
 
-**15. The jurisdiction gate is labelled as a demo.** See the section below. It is stated in the UI on every screen it appears on, in the footer of gated pages, and here.
+**15. The jurisdiction gate is labelled as a demo.** See the section below. It is stated in the UI on every screen it appears on, in the footer of gated pages, and here. It sits at the point of action rather than over the read path, so it gates releasing and claiming rather than looking.
 
 ### Known limitations
 
