@@ -160,8 +160,11 @@ export const chainAdapter = {
       args: { employer: employer as Address },
       fromBlock: 0n
     });
-    /* Newest first: the most recent bonus is the one being looked for. */
-    return events.map((event) => event.args.grantId).reverse();
+    /* Newest first: the most recent bonus is the one being looked for. A log whose args
+       failed to decode is dropped rather than allowed to become an undefined grant number. */
+    return events
+      .flatMap((event) => (event.args.grantId === undefined ? [] : [event.args.grantId]))
+      .reverse();
   },
   /* The optional second argument is the additive change of spec §8.3: it fires
      immediately before each of the three writes, so the form can show which
