@@ -109,7 +109,7 @@ VITE_NVDA_ADDRESS=0x65a9376d29c67A4De1269fc317B07cd4A35eE490
 
 `VITE_RH_RPC_URL` defaults to the public testnet RPC in `chainAdapter.ts` and does not need to be set.
 
-**A sixth var is optional but worth setting for judging:** `VITE_JUDGE_GRANT_ID`. When it holds a grant number, the landing page offers a "View a live testnet certificate" link straight to that certificate. Without it the link simply does not render — no broken state.
+**A sixth var is optional but worth setting for judging:** `VITE_JUDGE_GRANT_ID`. The passing end-to-end run printed `VITE_JUDGE_GRANT_ID=5`. With it set, the landing page offers a "View a live testnet certificate" link straight to that certificate — a judge with no wallet can open something real in one click. Without it the link simply does not render; no broken state. The number is escrow-global, so if the escrow sees more grants, re-read it from a fresh run.
 
 Until those are set, the deployed site throws `Missing or invalid VITE_GRANT_ESCROW_ADDRESS` on the employer and contractor routes. That message previously pointed only at `frontend/.env.local`, which is the wrong instruction for a deployed build; it now names the deployment environment too.
 
@@ -123,7 +123,11 @@ Ordered by what the submission checklist in the Build Spec §6 actually scores. 
 
 1. ~~**Verify the deployed contracts on the explorer.**~~ **Done 2026-09-30** — all six verified, confirmed against the explorer's own API. See the deployment record.
 2. ~~**Update the five `VITE_*` addresses in Vercel and redeploy.**~~ **Done 2026-09-30 for the second deployment** — verified against the live production bundle on `/assets/index-BppQ0zLR.js`. **Then reopened on 2026-10-01**: the third deployment replaced every address, so the five values must be pasted again. See "Frontend configuration" for why the site is broken until they are.
-3. ~~**End-to-end test with two separate wallets.**~~ **Done 2026-09-30 against the second deployment — 10/10 checks passed.** Re-run against the third deployment (run dispatched 2026-10-01); see the end-to-end report for the result. `CONTRACTOR_PRIVATE_KEY` is a repository secret.
+3. ~~**End-to-end test with two separate wallets.**~~ **Done 2026-10-01 against the third deployment — 15/15 checks passed** (run `36895105073`), with real transactions and confirmations. `CONTRACTOR_PRIVATE_KEY` is a repository secret. Re-runnable via the **End-to-end two-wallet test** workflow.
+   - **The first attempt at this (run `36892955230`) failed, and the failure was mine, not the contract's.** The third path read `escrow.grantCount()` *after* its `createGrant`. `grantId = grantCount++` is a post-increment, so the value read afterwards is one past the grant just created — a grant that does not exist, whose employer is the zero address. `fundGrant` then reverted `GrantEscrow: only employer`, correctly. Fixed in `8606733` by reading the counter before the create, as paths 1 and 2 already did. **The contract behaved correctly in both runs; only the test was wrong.**
+   - The failed run left one created-but-unfunded grant on the escrow. It holds nothing, and it cannot be funded (its employer is the zero address) or released. Harmless testnet clutter.
+   - **`VITE_JUDGE_GRANT_ID=5`** — the grant left held for a judge to open. Minted by the passing run; the number depends on how many grants the escrow has seen, so re-read it from a fresh run rather than assuming 5.
+   - Independently confirmed outside the test script: the explorer's token-balance API reports the escrow holding exactly `2500.0` mock AAPL and no USDG, which is the judge grant and matches the swap leaving no dollars behind.
    - The run independently confirmed the contractor address is `0x49B4f09C5894c1C90B0ca9099AF3De0Faf7f3037` and the employer `0xe5Fe9119…`, so this exercises two genuinely distinct accounts.
    - It created **two real grants** on the deployed escrow (10 AAPL released by the employer, 5 AAPL claimed after timeout), leaving the contractor holding 15 mock AAPL. That is live testnet state, not a simulation.
    - It also asserts the negative cases by attempting them and requiring a revert: the employer cannot release after the deadline, and a released grant cannot be claimed twice.
