@@ -84,9 +84,19 @@
 }
 
 .wordmark {
+  /* The mark and the name are one control, so they sit on one line. 22px mark against a
+     20px wordmark: the ring reads as a seal beside the name rather than as a bullet. */
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
   font: 400 20px/1 Fraunces, Georgia, serif;
   letter-spacing: -0.02em;
   color: var(--ink);
+}
+
+/* currentColor, so the mark is navy on paper and cream on the desk without a second rule. */
+.wordmark .mark {
+  flex: none;
 }
 
 .wordmark em {

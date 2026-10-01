@@ -1,4 +1,5 @@
 import { IconAlert, IconClose } from "./icons";
+import { Mark } from "./Mark";
 import type { AccountView } from "../hooks/useAccount";
 import type { Route, Surface } from "../routes";
 
@@ -16,7 +17,10 @@ export function Header({ surface, navigate, account }: HeaderProps) {
     <>
       <header className={`site-header ${surface === "desk" ? "on-desk" : "on-paper"}`}>
         <button className="wordmark" onClick={() => navigate("/")}>
-          Equity <em>Benefit Wallet</em>
+          <Mark />
+          <span>
+            Equity <em>Benefit Wallet</em>
+          </span>
         </button>
 
         <nav aria-label="Primary">
