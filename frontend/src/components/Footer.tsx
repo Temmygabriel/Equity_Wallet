@@ -13,7 +13,6 @@ export function Footer({ gated = false }: FooterProps) {
         <span>{TESTNET_NOTICE}</span>
         {gated && <span>Jurisdiction check is demo-only, not a compliance control.</span>}
       </div>
-      <span>Robinhood Chain Testnet, mock contracts only</span>
     </footer>
   );
 }

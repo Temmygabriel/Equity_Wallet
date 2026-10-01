@@ -156,6 +156,12 @@ textarea {
   flex-direction: column;
   gap: 6px;
   flex: 1 1 320px;
+  /* The notice is the footer's right-hand column now that the duplicate
+     "Robinhood Chain Testnet, mock contracts only" span is gone. It is the
+     last child and still grows to fill, so without this its text would sit
+     left, directly after the wordmark. */
+  align-items: flex-end;
+  text-align: right;
 }
 
 /* --- Motion -------------------------------------------------------------- */

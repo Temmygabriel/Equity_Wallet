@@ -30,12 +30,16 @@
   gap: 0;
 }
 
-/* The baseline draws left to right when the section arrives. */
+/* The baseline draws left to right when the section arrives. It stops at the
+   third dot rather than the right edge: the grid's third column starts at
+   66.667%, so `right: 0` let the rule run on into empty space past the last
+   stop. The dots sit at the head of each column, so the line ends where the
+   third one is. */
 .line::before {
   content: "";
   position: absolute;
   left: 0;
-  right: 0;
+  right: 33.333%;
   top: 9px;
   height: 1px;
   background: var(--ink);
